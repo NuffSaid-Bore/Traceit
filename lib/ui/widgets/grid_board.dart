@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:trace_it/ui/painters/grid_painter.dart';
 import '../../models/puzzle.dart';
 import '../../providers/puzzle_provider.dart';
-import '../painters/line_painter.dart';
 import 'puzzle_number_circle.dart';
 import 'dart:math';
 
@@ -24,47 +24,93 @@ class _GridBoardState extends State<GridBoard> {
 
     if (puzzle == null) return const Center(child: Text("No puzzle loaded"));
 
-    return LayoutBuilder(builder: (context, constraints) {
-      cellWidth = constraints.maxWidth / puzzle.cols;
-      cellHeight = constraints.maxHeight / puzzle.rows;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        cellWidth = constraints.maxWidth / puzzle.cols;
+        cellHeight = constraints.maxHeight / puzzle.rows;
 
-      return GestureDetector(
-        onPanStart: (details) => _handleDraw(details.localPosition, puzzle, provider),
-        onPanUpdate: (details) => _handleDraw(details.localPosition, puzzle, provider),
-        onPanEnd: (_) {
-          if (provider.checkWin()) {
-            provider.stopTimer();
-            provider.nextStageColor();
-            // Trigger celebration screen
-            Navigator.pushNamed(context, "/celebrate");
-          }
-        },
-        child: CustomPaint(
-          size: Size(constraints.maxWidth, constraints.maxHeight),
-          painter: LinePainter(provider.drawnPath, provider.lineColor),
-          child: Stack(
-            children: [
-              for (var entry in puzzle.numbers.entries)
-                PuzzleNumberCircle(
-                  number: entry.key,
-                  position: _cellCenter(entry.value),
-                  size: min(cellWidth, cellHeight) * 0.6,
+        return GestureDetector(
+          onPanStart: (details) =>
+              _handleDraw(details.localPosition, puzzle, provider),
+          onPanUpdate: (details) =>
+              _handleDraw(details.localPosition, puzzle, provider),
+          onPanEnd: (_) {
+            final provider = Provider.of<PuzzleProvider>(
+              context,
+              listen: false,
+            );
+
+            if (provider.checkWin()) {
+              provider.stopTimer();
+              provider.nextStageColor();
+              // Trigger celebration screen
+              Navigator.pushNamed(context, "/celebrate").then((_) {
+                // showDialog(
+                //   context: context,
+                //   barrierDismissible: false,
+                //   builder: (_) => const Center(child: CircularProgressIndicator()),
+                // );
+
+                // // generate puzzle asynchronously
+                // await context.read<PuzzleProvider>().generateNewPuzzle(8);
+              });
+            } else {
+              // Show a SnackBar to notify the user
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  backgroundColor: Colors.redAccent.shade700,
+                  content: const Text(
+                    "Oops! Puzzle not complete. Try again.",
+                    style: TextStyle(color: Colors.white),
+                  ),
+                  action: SnackBarAction(
+                    label: 'Reset',
+                    onPressed: () {
+                      provider.undo();
+                      provider.startTimer();
+                    },
+                    textColor: Colors.redAccent,
+                    backgroundColor: Colors.redAccent.shade100,
+                  ),
+                  duration: const Duration(seconds: 4),
                 ),
-            ],
-          ),
-        ),
-      );
-    });
-  }
+              );
+            }
+          },
 
-  Offset _cellCenter(Offset cell) {
-    return Offset(
-      (cell.dx + 0.5) * cellWidth,
-      (cell.dy + 0.5) * cellHeight,
+          child: CustomPaint(
+            size: Size(constraints.maxWidth, constraints.maxHeight),
+            painter: GridLinePainter(
+              rows: puzzle.rows,
+              cols: puzzle.cols,
+              drawnPath: provider.drawnPath,
+              lineColor: provider.lineColor,
+            ),
+            child: Stack(
+              children: [
+                for (var entry in puzzle.numbers.entries)
+                  PuzzleNumberCircle(
+                    number: entry.key,
+                    position: _cellCenter(entry.value),
+                    size: min(cellWidth, cellHeight) * 0.8,
+                  ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
-  void _handleDraw(Offset localPosition, Puzzle puzzle, PuzzleProvider provider) {
+  Offset _cellCenter(Offset cell) {
+    return Offset((cell.dx + 0.5) * cellWidth, (cell.dy + 0.5) * cellHeight);
+  }
+
+  void _handleDraw(
+    Offset localPosition,
+    Puzzle puzzle,
+    PuzzleProvider provider,
+  ) {
     int col = (localPosition.dx / cellWidth).floor();
     int row = (localPosition.dy / cellHeight).floor();
 

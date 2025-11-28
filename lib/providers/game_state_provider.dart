@@ -48,6 +48,11 @@ class GameStateProvider extends ChangeNotifier {
     }
   }
 
+  Future<void> saveGame() async {
+    await _saveState();
+    notifyListeners();
+  }
+
   Future<void> loadSavedGame() async {
     UserState? saved = await StorageService.loadPuzzle();
     if (saved != null) {

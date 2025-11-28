@@ -8,7 +8,7 @@ part of 'leaderboard_user.dart';
 
 class LeaderboardEntryAdapter extends TypeAdapter<LeaderboardEntry> {
   @override
-  final int typeId = 0;
+  final int typeId = 2;
 
   @override
   LeaderboardEntry read(BinaryReader reader) {

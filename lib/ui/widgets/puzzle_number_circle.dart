@@ -29,7 +29,7 @@ class PuzzleNumberCircle extends StatelessWidget {
         child: Text(
           "$number",
           style: const TextStyle(
-              fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
+              fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
         ),
       ),
     );

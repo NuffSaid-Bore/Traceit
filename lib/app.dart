@@ -5,6 +5,10 @@ import 'package:trace_it/ui/screens/game_page.dart';
 import 'package:trace_it/ui/screens/landing_page.dart';
 import 'providers/puzzle_provider.dart';
 import 'providers/leaderboard_provider.dart';
+import 'providers/game_state_provider.dart';
+import 'providers/badge_provider.dart';
+
+
 class ZipApp extends StatelessWidget {
   const ZipApp({super.key});
 
@@ -12,15 +16,24 @@ class ZipApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        // LeaderboardProvider is created first
+
+        // GameStateProvider is created first
+        ChangeNotifierProvider(create: (_) => GameStateProvider()),
+
+        // LeaderboardProvider is created second
         ChangeNotifierProvider(create: (_) => LeaderboardProvider()),
+        ChangeNotifierProvider(create: (_) => BadgeProvider()),
 
         // PuzzleProvider depends on LeaderboardProvider
         ChangeNotifierProxyProvider<LeaderboardProvider, PuzzleProvider>(
-          create: (_) => PuzzleProvider(leaderboardProvider: LeaderboardProvider()),
-          update: (_, leaderboardProvider, puzzleProvider) =>
-              PuzzleProvider(leaderboardProvider: leaderboardProvider),
-        ),
+        create: (_) => PuzzleProvider(leaderboardProvider: null),
+        update: (_, leaderboardProvider, previous) {
+          previous ??= PuzzleProvider(leaderboardProvider: leaderboardProvider);
+          previous.leaderboardProvider = leaderboardProvider;
+          return previous;
+        },
+      ),
+
       ],
       child: MaterialApp(
         title: "ZIP: Puzzle Game",

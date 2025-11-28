@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1022300253396",
+    "project_id": "traceit-7156e",
+    "storage_bucket": "traceit-7156e.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1022300253396:android:6afd171cf2a7d9d3979f41",
+        "android_client_info": {
+          "package_name": "com.example.trace_it"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDqJZBjkOhsVE2rQkb03HkwgQh0X55m7nA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

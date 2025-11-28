@@ -7,7 +7,7 @@ import '../core/utils/puzzle_generator.dart';
 
 class PuzzleProvider extends ChangeNotifier {
 
-  final LeaderboardProvider leaderboardProvider;
+  LeaderboardProvider? leaderboardProvider;
 
   PuzzleProvider({required this.leaderboardProvider});
   Puzzle? currentPuzzle;
@@ -39,8 +39,13 @@ class PuzzleProvider extends ChangeNotifier {
   }
 
   /// Generate a new puzzle
-  void generateNewPuzzle(int difficulty) {
-    currentPuzzle = PuzzleGenerator.generate(difficulty);
+  Future<void> generateNewPuzzle(int size, PuzzlePathMode mode, int totalNumbers) async {
+    currentPuzzle = await PuzzleGenerator.generatePuzzleAsync(
+      size: size,
+      mode: mode,
+      totalNumbers: totalNumbers,
+
+      );
     resetGame();
     notifyListeners();
   }
@@ -108,13 +113,13 @@ class PuzzleProvider extends ChangeNotifier {
   if (currentPuzzle == null) return;
   final seconds = elapsed.inSeconds.toDouble();
 
-  final entryIndex = leaderboardProvider.entries.indexWhere((e) => e.userId == userId);
+  final entryIndex = leaderboardProvider!.entries.indexWhere((e) => e.userId == userId);
   if (entryIndex >= 0) {
     // Update average time
-    final oldEntry = leaderboardProvider.entries[entryIndex];
+    final oldEntry = leaderboardProvider!.entries[entryIndex];
     final newAvgTime = ((oldEntry.averageTime * oldEntry.puzzlesCompleted) + seconds) /
         (oldEntry.puzzlesCompleted + 1);
-    leaderboardProvider.addOrUpdateEntry(
+    leaderboardProvider!.addOrUpdateEntry(
       LeaderboardEntry(
         userId: userId,
         username: username,
@@ -123,7 +128,7 @@ class PuzzleProvider extends ChangeNotifier {
       ),
     );
   } else {
-    leaderboardProvider.addOrUpdateEntry(
+    leaderboardProvider!.addOrUpdateEntry(
       LeaderboardEntry(
         userId: userId,
         username: username,

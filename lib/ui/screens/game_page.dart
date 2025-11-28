@@ -17,27 +17,42 @@ class GamePage extends StatelessWidget {
           children: [
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: const [
-                TimerWidget(),
-                AttemptCounter(),
-              ],
+              children: const [TimerWidget(), AttemptCounter()],
             ),
 
             const SizedBox(height: 20),
             const Expanded(child: GridBoard()),
 
             const SizedBox(height: 20),
-            Consumer<PuzzleProvider>(
-              builder: (context, provider, _) {
-                return ElevatedButton(
-                  onPressed: () {
-                    final gameProvider = Provider.of<GameStateProvider>(context, listen: false);
-                      gameProvider.incrementAttempts();
-                    provider.undo();
+            Column(
+              children: [
+                Consumer<PuzzleProvider>(
+                  builder: (context, provider, _) {
+                    return ElevatedButton(
+                      onPressed: () {
+                        final gameProvider = Provider.of<GameStateProvider>(
+                          context,
+                          listen: false,
+                        );
+                        gameProvider.incrementAttempts();
+                        provider.undo();
+                      },
+                      child: const Text("Reset"),
+                    );
                   },
-                  child: const Text("Undo"),
-                );
-              },
+                ),
+                ElevatedButton(
+                  onPressed: () async {
+                    final gameProvider = Provider.of<GameStateProvider>(
+                          context,
+                          listen: false,
+                        );
+                    await gameProvider.saveGame();
+                    Navigator.pushNamed(context, "/");
+                  },
+                  child: const Text("Home"),
+                ),
+              ],
             ),
             const SizedBox(height: 20),
           ],

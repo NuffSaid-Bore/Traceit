@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:trace_it/core/utils/puzzle_generator.dart';
 import 'package:trace_it/ui/widgets/badge_timeline.dart';
 import '../../providers/puzzle_provider.dart';
 import 'package:confetti/confetti.dart';
@@ -32,8 +33,15 @@ class _CelebrationPageState extends State<CelebrationPage> {
     _bottomController.play();
     _leftController.play();
     _rightController.play();
-    Timer(const Duration(seconds: 4), () {
+    Timer(const Duration(seconds: 7), () async{
+      showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
+    );
+      await context.read<PuzzleProvider>().generateNewPuzzle(8, PuzzlePathMode.heuristicDFS, 15);
       Navigator.pop(context);
+      Navigator.pushNamed(context, "/game");
     });
   }
 
@@ -60,6 +68,7 @@ class _CelebrationPageState extends State<CelebrationPage> {
 
     // Record the win
     provider.recordWin();
+    provider.attempts = 0;
 
     return Scaffold(
       backgroundColor: Colors.black.withOpacity(0.7),
@@ -139,12 +148,16 @@ class _CelebrationPageState extends State<CelebrationPage> {
                   const SizedBox(height: 16),
                   const Text(
                     "Puzzle Completed!",
-                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.orange,
+                    ),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     "Time: $minutes:$seconds",
-                    style: const TextStyle(fontSize: 18),
+                    style: const TextStyle(fontSize: 18, color: Colors.black54),
                   ),
                   const SizedBox(height: 16),
                   Consumer<PuzzleProvider>(
