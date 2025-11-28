@@ -243,62 +243,6 @@ static List<Offset> _rotatePath(List<Offset> path, int rows, int cols, int rotat
   }).toList();
 }
 
-
-  /// ---------------------------------------------------------
-  /// RANDOM HAMILTONIAN PATH
-  /// ---------------------------------------------------------
-  ///
-  /// Generates a path covering all cells of the grid using
-  /// DFS with randomized directions.
-  /// Guaranteed to be solvable (all numbers are along this path).
-  static List<Offset> _generateRandomPath(int rows, int cols, {int maxAttempts = 100}) {
-    List<Offset> path = [];
-    Set<String> visited = {};
-
-    bool dfs(int r, int c) {
-      path.add(Offset(c.toDouble(), r.toDouble()));
-      visited.add("$r,$c");
-
-      if (visited.length == rows * cols) return true;
-
-      // Randomize directions: down, right, up, left
-      List<List<int>> dirs = [
-        [0, 1],
-        [1, 0],
-        [0, -1],
-        [-1, 0]
-      ]..shuffle(_rng);
-
-      if (_rng.nextBool()) dirs.shuffle(_rng);
-
-      for (var d in dirs) {
-        int nr = r + d[1];
-        int nc = c + d[0];
-
-        if (nr >= 0 && nr < rows && nc >= 0 && nc < cols && !visited.contains("$nr,$nc")) {
-          if (dfs(nr, nc)) return true;
-        }
-      }
-
-      // Backtrack
-      path.removeLast();
-      visited.remove("$r,$c");
-      return false;
-    }
-
-    for (int attempt = 0; attempt < maxAttempts; attempt++) {
-      path.clear();
-      visited.clear();
-
-      int sr = Random().nextInt(rows);
-      int sc = Random().nextInt(cols);
-
-      if (dfs(sr, sc)) return path;
-    }
-
-    throw Exception("Failed to generate path after $maxAttempts attempts");
-  }
-
   /// ---------------------------------------------------------
   /// ASSIGN NUMBERS
   /// ---------------------------------------------------------
