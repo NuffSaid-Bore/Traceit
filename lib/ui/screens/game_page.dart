@@ -15,13 +15,18 @@ class GamePage extends StatelessWidget {
       body: SafeArea(
         child: Column(
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: const [TimerWidget(), AttemptCounter()],
+            Padding(
+              padding: const EdgeInsets.all(10.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: const [TimerWidget(), AttemptCounter()],
+              ),
             ),
 
             const SizedBox(height: 20),
-            const Expanded(child: GridBoard()),
+            const Expanded(
+              child: Padding(padding: EdgeInsets.all(10.0), child: GridBoard()),
+            ),
 
             const SizedBox(height: 20),
             Column(
@@ -44,11 +49,11 @@ class GamePage extends StatelessWidget {
                 ElevatedButton(
                   onPressed: () async {
                     final gameProvider = Provider.of<GameStateProvider>(
-                          context,
-                          listen: false,
-                        );
+                      context,
+                      listen: false,
+                    );
                     await gameProvider.saveGame();
-                    Navigator.pushNamed(context, "/");
+                    Navigator.pushNamed(context, "/home");
                   },
                   child: const Text("Home"),
                 ),

@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:trace_it/models/leaderboard_user.dart';
 import 'package:trace_it/providers/leaderboard_provider.dart';
 import '../models/puzzle.dart';
 import '../core/utils/puzzle_generator.dart';
@@ -8,6 +7,7 @@ import '../core/utils/puzzle_generator.dart';
 class PuzzleProvider extends ChangeNotifier {
 
   LeaderboardProvider? leaderboardProvider;
+  int currentWinStreak = 0;
 
   PuzzleProvider({required this.leaderboardProvider});
   Puzzle? currentPuzzle;
@@ -28,6 +28,7 @@ class PuzzleProvider extends ChangeNotifier {
   /// Call when a puzzle is won
   void recordWin() {
     currentStreak++;
+    currentWinStreak++;
     if (currentStreak > maxStreak) maxStreak = currentStreak;
     notifyListeners();
   }
@@ -46,7 +47,17 @@ class PuzzleProvider extends ChangeNotifier {
       totalNumbers: totalNumbers,
 
       );
-    resetGame();
+    startNewGame();
+    notifyListeners();
+  }
+
+  void startNewGame() {
+    stopTimer();
+    elapsed = Duration.zero;
+    drawnPath.clear();
+    visitedCells.clear();
+    attempts = 0;
+    currentWinStreak = 0;
     notifyListeners();
   }
 
@@ -73,6 +84,7 @@ class PuzzleProvider extends ChangeNotifier {
     drawnPath.clear();
     visitedCells.clear();
     attempts++;
+    currentWinStreak = 0;
     notifyListeners();
   }
 
@@ -109,35 +121,6 @@ class PuzzleProvider extends ChangeNotifier {
     return true;
   }
 
-  void reportScore(String userId, String username) {
-  if (currentPuzzle == null) return;
-  final seconds = elapsed.inSeconds.toDouble();
-
-  final entryIndex = leaderboardProvider!.entries.indexWhere((e) => e.userId == userId);
-  if (entryIndex >= 0) {
-    // Update average time
-    final oldEntry = leaderboardProvider!.entries[entryIndex];
-    final newAvgTime = ((oldEntry.averageTime * oldEntry.puzzlesCompleted) + seconds) /
-        (oldEntry.puzzlesCompleted + 1);
-    leaderboardProvider!.addOrUpdateEntry(
-      LeaderboardEntry(
-        userId: userId,
-        username: username,
-        puzzlesCompleted: oldEntry.puzzlesCompleted + 1,
-        averageTime: newAvgTime,
-      ),
-    );
-  } else {
-    leaderboardProvider!.addOrUpdateEntry(
-      LeaderboardEntry(
-        userId: userId,
-        username: username,
-        puzzlesCompleted: 1,
-        averageTime: seconds,
-      ),
-    );
-  }
-}
 
 
   /// Undo functionality (reset board)
@@ -152,7 +135,14 @@ class PuzzleProvider extends ChangeNotifier {
       Colors.red,
       Colors.green,
       Colors.orange,
-      Colors.purple
+      Colors.purple,
+      Colors.deepPurple,
+      Colors.pink,
+      Colors.teal,
+      Colors.amber,
+      Colors.indigo,
+      Colors.cyan,
+      Colors.lime,
     ];
     int index = colors.indexOf(lineColor);
     lineColor = colors[(index + 1) % colors.length];

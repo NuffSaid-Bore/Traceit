@@ -8,7 +8,7 @@ part of 'leaderboard_user.dart';
 
 class LeaderboardEntryAdapter extends TypeAdapter<LeaderboardEntry> {
   @override
-  final int typeId = 2;
+  final int typeId = 1;
 
   @override
   LeaderboardEntry read(BinaryReader reader) {
@@ -21,13 +21,14 @@ class LeaderboardEntryAdapter extends TypeAdapter<LeaderboardEntry> {
       username: fields[1] as String,
       puzzlesCompleted: fields[2] as int,
       averageTime: fields[3] as double,
+      totalTime: fields[4] as double,
     );
   }
 
   @override
   void write(BinaryWriter writer, LeaderboardEntry obj) {
     writer
-      ..writeByte(4)
+      ..writeByte(5)
       ..writeByte(0)
       ..write(obj.userId)
       ..writeByte(1)
@@ -35,7 +36,9 @@ class LeaderboardEntryAdapter extends TypeAdapter<LeaderboardEntry> {
       ..writeByte(2)
       ..write(obj.puzzlesCompleted)
       ..writeByte(3)
-      ..write(obj.averageTime);
+      ..write(obj.averageTime)
+      ..writeByte(4)
+      ..write(obj.totalTime);
   }
 
   @override

@@ -8,7 +8,7 @@ part of 'user_state.dart';
 
 class UserStateAdapter extends TypeAdapter<UserState> {
   @override
-  final int typeId = 1;
+  final int typeId = 3;
 
   @override
   UserState read(BinaryReader reader) {

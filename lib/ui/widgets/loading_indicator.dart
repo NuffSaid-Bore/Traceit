@@ -10,10 +10,10 @@ class LoadingWithText extends StatelessWidget {
     return SizedBox(
       width: 120,
       height: 120,
-      child: Stack(
-        alignment: Alignment.center,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const CircularProgressIndicator(
+          CircularProgressIndicator(
             strokeWidth: 6,
             valueColor: AlwaysStoppedAnimation<Color>(Colors.deepPurpleAccent),
           ),

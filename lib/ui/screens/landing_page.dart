@@ -26,15 +26,23 @@ class _LandingPageState extends State<LandingPage> {
         listen: false,
       );
 
-      gameProvider.loadSavedGame().then((_) {
-        if (mounted) setState(() => loading = false);
-      });
+      () async {
+        try {
+          await gameProvider.loadSavedGame();
+        } catch (e) {
+          print("Error: $e");
+        } finally {
+          if (mounted) setState(() => loading = false);
+        }
+      }();
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final gameProvider = Provider.of<GameStateProvider>(context);
+    final gameProvider = Provider.of<GameStateProvider>(
+      context,
+    ); // listen true!
     if (loading) return const Center(child: CircularProgressIndicator());
     return Scaffold(
       body: SafeArea(
@@ -42,11 +50,20 @@ class _LandingPageState extends State<LandingPage> {
           child: Column(
             children: [
               const SizedBox(height: 20),
-              Text("ZIP", style: Theme.of(context).textTheme.headlineLarge),
+              Text(
+                "Trace...It",
+                style: Theme.of(context).textTheme.headlineLarge,
+              ),
               const SizedBox(height: 20),
-              LeaderboardWidget(),
+              Padding(
+                padding: const EdgeInsets.all(10.0),
+                child: LeaderboardWidget(),
+              ),
               const SizedBox(height: 20),
-              BadgeTimeline(),
+              Padding(
+                padding: const EdgeInsets.all(25.0),
+                child: BadgeTimeline(),
+              ),
               const SizedBox(height: 30),
               ElevatedButton(
                 onPressed: gameProvider.hasSavedGame
@@ -65,7 +82,11 @@ class _LandingPageState extends State<LandingPage> {
                     builder: (_) =>
                         const Center(child: CircularProgressIndicator()),
                   );
-                  await provider.generateNewPuzzle(8, PuzzlePathMode.heuristicDFS, 15);
+                  await provider.generateNewPuzzle(
+                    8,
+                    PuzzlePathMode.heuristicDFS,
+                    15,
+                  );
                   Navigator.pop(context); // remove loading dialog
                   Navigator.pushNamed(context, "/game");
                 },

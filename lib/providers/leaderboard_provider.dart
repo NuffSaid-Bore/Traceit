@@ -1,22 +1,28 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:trace_it/core/services/firestore_service.dart';
 import '../models/leaderboard_user.dart';
 
 class LeaderboardProvider extends ChangeNotifier {
   List<LeaderboardEntry> entries = [];
+  StreamSubscription? _subscription;
 
-  /// Add or update a user entry
-  void addOrUpdateEntry(LeaderboardEntry entry) {
-    final index = entries.indexWhere((e) => e.userId == entry.userId);
-    if (index >= 0) {
-      entries[index] = entry; // update
-    } else {
-      entries.add(entry);
-    }
-    // Sort descending by score
-    entries.sort((a, b) => b.score.compareTo(a.score));
-    notifyListeners();
+  LeaderboardProvider() {
+    _listenToLeaderboard();
   }
 
-  /// Get top N users
-  List<LeaderboardEntry> top(int n) => entries.take(n).toList();
+  void _listenToLeaderboard() {
+    _subscription = FirestoreService.leaderboardStream().listen((rawList) {
+      entries = rawList
+          .map((data) => LeaderboardEntry.fromFirestore(data))
+          .toList();
+      notifyListeners();
+    });
+  }
+
+  @override
+  void dispose() {
+    _subscription?.cancel();
+    super.dispose();
+  }
 }

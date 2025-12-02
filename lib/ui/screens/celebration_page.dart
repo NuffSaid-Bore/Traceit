@@ -1,10 +1,16 @@
 import 'dart:async';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:trace_it/core/utils/puzzle_generator.dart';
-import 'package:trace_it/ui/widgets/badge_timeline.dart';
-import '../../providers/puzzle_provider.dart';
 import 'package:confetti/confetti.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:trace_it/providers/badge_provider.dart';
+import '../../providers/puzzle_provider.dart';
+import '../../providers/leaderboard_provider.dart';
+import '../../models/leaderboard_user.dart';
+import 'package:trace_it/core/services/firestore_service.dart';
+import 'package:trace_it/core/services/storage_service.dart';
+import 'package:trace_it/core/utils/puzzle_generator.dart';
 
 class CelebrationPage extends StatefulWidget {
   const CelebrationPage({super.key});
@@ -22,6 +28,7 @@ class _CelebrationPageState extends State<CelebrationPage> {
   @override
   void initState() {
     super.initState();
+
     _topController = ConfettiController(duration: const Duration(seconds: 3));
     _bottomController = ConfettiController(
       duration: const Duration(seconds: 3),
@@ -33,18 +40,86 @@ class _CelebrationPageState extends State<CelebrationPage> {
     _bottomController.play();
     _leftController.play();
     _rightController.play();
-    Timer(const Duration(seconds: 7), () async{
-      showDialog(
+
+     _processPuzzleCompletion();
+
+  }
+Future<void> _processPuzzleCompletion() async {
+  // Wait 10 seconds before processing
+  await Future.delayed(const Duration(seconds: 10));
+
+  if (!mounted) return;
+
+  final puzzleProvider = context.read<PuzzleProvider>();
+  final leaderboardProvider = context.read<LeaderboardProvider>();
+  final badgeProvider = context.read<BadgeProvider>();
+  final user = FirebaseAuth.instance.currentUser;
+
+  // Show loading dialog after first frame
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    if (!mounted) return;
+    showDialog(
       context: context,
       barrierDismissible: false,
       builder: (_) => const Center(child: CircularProgressIndicator()),
     );
-      await context.read<PuzzleProvider>().generateNewPuzzle(8, PuzzlePathMode.heuristicDFS, 15);
-      Navigator.pop(context);
-      Navigator.pushNamed(context, "/game");
-    });
+  });
+
+  if (user != null) {
+    final attempts = puzzleProvider.attempts;
+    final elapsedSeconds = puzzleProvider.elapsed.inSeconds;
+
+    // Save completion to Firestore
+    await FirestoreService.saveGameResult(user.uid, attempts, elapsedSeconds);
+    await FirestoreService.updateDailyStreak(user.uid);
+
+    // Update badges
+    final badgeData = await FirestoreService.loadUserBadgeData(user.uid);
+    badgeProvider.updateFromFirestore(badgeData);
+
+    // Save locally
+    await StorageService.completePuzzle(attempts, elapsedSeconds);
+
+    // Load updated user data
+    final updatedDoc =
+        await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+    final data = updatedDoc.data()!;
+    final puzzlesCompleted = (data['puzzlesCompleted'] ?? 0) as int;
+    final totalTime = (data['totalTime'] ?? 0.0) as num;
+    final averageTime = puzzlesCompleted > 0 ? totalTime / puzzlesCompleted : 0.0;
+    final username = data['username'] ?? user.displayName ?? "Player";
+
+    final index =
+        leaderboardProvider.entries.indexWhere((e) => e.userId == user.uid);
+    final updatedEntry = LeaderboardEntry(
+      userId: user.uid,
+      username: username,
+      puzzlesCompleted: puzzlesCompleted,
+      averageTime: averageTime.toDouble(),
+      totalTime: totalTime.toDouble(),
+    );
+
+    if (index >= 0) {
+      leaderboardProvider.entries[index] = updatedEntry;
+    } else {
+      leaderboardProvider.entries.add(updatedEntry);
+    }
+
+    // Sort leaderboard by score
+    leaderboardProvider.entries.sort((a, b) => b.score.compareTo(a.score));
+    leaderboardProvider.notifyListeners();
   }
 
+  // Reset attempts and generate a new puzzle
+  puzzleProvider.attempts = 0;
+  await puzzleProvider.generateNewPuzzle(8, PuzzlePathMode.heuristicDFS, 15);
+
+  if (!mounted) return;
+
+  // Remove loading dialog and navigate
+  Navigator.pop(context);
+  Navigator.pushNamed(context, "/game");
+}
   @override
   void dispose() {
     _topController.dispose();
@@ -66,21 +141,18 @@ class _CelebrationPageState extends State<CelebrationPage> {
         .toString()
         .padLeft(2, '0');
 
-    // Record the win
     provider.recordWin();
-    provider.attempts = 0;
 
     return Scaffold(
       backgroundColor: Colors.black.withOpacity(0.7),
       body: Stack(
         alignment: Alignment.center,
         children: [
-          // Top confetti
           Align(
             alignment: Alignment.topCenter,
             child: ConfettiWidget(
               confettiController: _topController,
-              blastDirection: 3.14 / 2, // downward
+              blastDirection: 3.14 / 2,
               emissionFrequency: 0.05,
               numberOfParticles: 10,
               maxBlastForce: 20,
@@ -88,12 +160,11 @@ class _CelebrationPageState extends State<CelebrationPage> {
               gravity: 0.3,
             ),
           ),
-          // Bottom confetti
           Align(
             alignment: Alignment.bottomCenter,
             child: ConfettiWidget(
               confettiController: _bottomController,
-              blastDirection: -3.14 / 2, // upward
+              blastDirection: -3.14 / 2,
               emissionFrequency: 0.05,
               numberOfParticles: 10,
               maxBlastForce: 20,
@@ -101,12 +172,11 @@ class _CelebrationPageState extends State<CelebrationPage> {
               gravity: 0.3,
             ),
           ),
-          // Left confetti
           Align(
             alignment: Alignment.centerLeft,
             child: ConfettiWidget(
               confettiController: _leftController,
-              blastDirection: 0, // right
+              blastDirection: 0,
               emissionFrequency: 0.05,
               numberOfParticles: 10,
               maxBlastForce: 20,
@@ -114,12 +184,11 @@ class _CelebrationPageState extends State<CelebrationPage> {
               gravity: 0.3,
             ),
           ),
-          // Right confetti
           Align(
             alignment: Alignment.centerRight,
             child: ConfettiWidget(
               confettiController: _rightController,
-              blastDirection: 3.14, // left
+              blastDirection: 3.14,
               emissionFrequency: 0.05,
               numberOfParticles: 10,
               maxBlastForce: 20,
@@ -127,7 +196,6 @@ class _CelebrationPageState extends State<CelebrationPage> {
               gravity: 0.3,
             ),
           ),
-
           Center(
             child: Container(
               padding: const EdgeInsets.all(24),
@@ -147,7 +215,7 @@ class _CelebrationPageState extends State<CelebrationPage> {
                   ),
                   const SizedBox(height: 16),
                   const Text(
-                    "Puzzle Completed!",
+                    "Puzzle Solved!",
                     style: TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.bold,
@@ -162,6 +230,28 @@ class _CelebrationPageState extends State<CelebrationPage> {
                   const SizedBox(height: 16),
                   Consumer<PuzzleProvider>(
                     builder: (_, provider, __) {
+                      if (provider.currentStreak >= 10) {
+                        return Text(
+                          "🏆 LEGENDARY STREAK: ${provider.currentStreak}",
+                          style: const TextStyle(
+                            fontSize: 22,
+                            color: Colors.amber,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        );
+                      }
+
+                      if (provider.currentStreak >= 5) {
+                        return Text(
+                          "🔥🔥 Hot Streak: ${provider.currentStreak}",
+                          style: const TextStyle(
+                            fontSize: 20,
+                            color: Colors.orange,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        );
+                      }
+
                       if (provider.currentStreak >= 3) {
                         return Text(
                           "🔥 Streak: ${provider.currentStreak}",
@@ -172,6 +262,7 @@ class _CelebrationPageState extends State<CelebrationPage> {
                           ),
                         );
                       }
+
                       return const SizedBox.shrink();
                     },
                   ),
@@ -179,7 +270,6 @@ class _CelebrationPageState extends State<CelebrationPage> {
               ),
             ),
           ),
-          Column(children: [BadgeTimeline()]),
         ],
       ),
     );

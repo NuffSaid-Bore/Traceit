@@ -37,7 +37,7 @@ class GridLinePainter extends CustomPainter {
     if (drawnPath.isNotEmpty) {
       final pathPaint = Paint()
         ..color = lineColor
-        ..strokeWidth = 10
+        ..strokeWidth = 15
         ..style = PaintingStyle.stroke
         ..strokeCap = StrokeCap.round;
 

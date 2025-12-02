@@ -8,7 +8,7 @@ part of 'puzzle.dart';
 
 class PuzzleAdapter extends TypeAdapter<Puzzle> {
   @override
-  final int typeId = 0;
+  final int typeId = 2;
 
   @override
   Puzzle read(BinaryReader reader) {

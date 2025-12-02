@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import 'package:trace_it/ui/screens/celebration_page.dart';
 import 'package:trace_it/ui/screens/game_page.dart';
 import 'package:trace_it/ui/screens/landing_page.dart';
+import 'package:trace_it/ui/screens/login.dart';
+import 'package:trace_it/ui/screens/sign_up.dart';
 import 'providers/puzzle_provider.dart';
 import 'providers/leaderboard_provider.dart';
 import 'providers/game_state_provider.dart';
@@ -39,8 +41,11 @@ class ZipApp extends StatelessWidget {
         title: "ZIP: Puzzle Game",
         debugShowCheckedModeBanner: false,
         theme: ThemeData.dark(),
+        initialRoute: "/login",
         routes: {
-          "/": (_) => const LandingPage(),
+          '/login': (_) => const LoginScreen(),
+          '/register': (_) => const RegisterScreen(),
+          "/home": (_) => const LandingPage(),
           "/game": (_) => const GamePage(),
           "/celebrate": (_) => const CelebrationPage(),
         },

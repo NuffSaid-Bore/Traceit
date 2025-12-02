@@ -1,7 +1,7 @@
-
 import 'package:flutter/material.dart';
 import '../models/badge.dart';
 import '../core/utils/streak_utils.dart';
+import '../core/services/firestore_service.dart';
 
 class BadgeProvider extends ChangeNotifier {
   List<Badges> _badges = [
@@ -31,19 +31,47 @@ class BadgeProvider extends ChangeNotifier {
     ),
   ];
 
-  List<DateTime> _activityDates = []; // could be loaded from Hive
+  List<DateTime> _activityDates = []; // loaded from Firestore
 
   List<Badges> get badges => _badges;
 
+  Map<String, bool> earned = {};
+  int dailyStreak = 0;
+
   int get currentStreak => StreakUtils.calculateStreak(_activityDates);
 
-  void addActivity(DateTime date) {
-    _activityDates.add(date);
-
+  /// Load activity from Firestore
+  Future<void> loadBadgesAndStreak() async {
+    _activityDates = await FirestoreService.loadUserActivityDates() ?? [];
     _updateBadges();
     notifyListeners();
   }
 
+  /// Add activity (e.g., puzzle completed)
+  Future<void> addActivity(DateTime date) async {
+    _activityDates.add(date);
+
+    await FirestoreService.saveUserActivityDate(date);
+    _updateBadges();
+    notifyListeners();
+  }
+
+  /// Update badges and daily streak from Firestore data
+  void updateFromFirestore(Map<String, dynamic> data) {
+    dailyStreak = data['dailyStreak'] ?? 0;
+    earned = Map<String, bool>.from(data['earnedBadges'] ?? {});
+    notifyListeners();
+  }
+
+  /// Reset streak if user resets game or increases attempts
+  Future<void> resetStreak() async {
+    _activityDates.clear();
+    await FirestoreService.clearUserActivityDates();
+    _updateBadges();
+    notifyListeners();
+  }
+
+  /// Update badges based on streak
   void _updateBadges() {
     int streak = currentStreak;
 
@@ -63,6 +91,9 @@ class BadgeProvider extends ChangeNotifier {
           earnedNow = streak >= 30;
           break;
       }
+
+      // update earned map for BadgeTimeline
+      earned[b.type.name] = earnedNow;
 
       return b.copyWith(
         earned: earnedNow,

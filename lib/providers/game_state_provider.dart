@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/puzzle.dart';
 import '../models/user_state.dart';
 import '../core/services/storage_service.dart';
-
+import '../core/services/firestore_service.dart';
 
 class GameStateProvider extends ChangeNotifier {
   UserState? _currentState;
@@ -11,53 +11,84 @@ class GameStateProvider extends ChangeNotifier {
 
   bool get hasSavedGame => _currentState != null;
 
-  void startNewGame(Puzzle puzzle, {int difficulty = 1}) {
+  /// Start a new game
+  void startNewGame(Puzzle puzzle, {int difficulty = 1}) async {
     _currentState = UserState(puzzle: puzzle, difficulty: difficulty);
-    _saveState();
+    await _saveState(); // local save
+    await FirestoreService.saveUserState(_currentState!); // cloud save
     notifyListeners();
   }
 
+  /// Restore game from loaded state
   void restoreGame(UserState state) {
     _currentState = state;
     notifyListeners();
   }
 
-  void incrementAttempts() {
+  /// Increment attempts
+  void incrementAttempts() async {
     if (_currentState == null) return;
-    _currentState = _currentState!.copyWith(attempts: _currentState!.attempts + 1);
-    _saveState();
+    _currentState = _currentState!.copyWith(
+        attempts: _currentState!.attempts + 1
+    );
+    await _saveState();
+    await FirestoreService.saveUserState(_currentState!);
     notifyListeners();
   }
 
-  void updateTimer(int elapsedSeconds) {
+  /// Update timer
+  void updateTimer(int elapsedSeconds) async {
     if (_currentState == null) return;
     _currentState = _currentState!.copyWith(elapsedSeconds: elapsedSeconds);
-    _saveState();
+    await _saveState();
+    await FirestoreService.saveUserState(_currentState!);
     notifyListeners();
   }
 
-  void completeGame() {
+  /// Complete game and clear local state
+  void completeGame() async {
     _currentState = null;
-    StorageService.clearPuzzle();
+    await StorageService.clearPuzzle();
+    await FirestoreService.clearUserState(); // optional: remove temp game state in Firestore
     notifyListeners();
   }
 
+  /// Local storage save
   Future<void> _saveState() async {
     if (_currentState != null) {
       await StorageService.savePuzzle(_currentState!);
     }
   }
 
-  Future<void> saveGame() async {
-    await _saveState();
-    notifyListeners();
-  }
+  /// Load saved game from Firestore first, fallback to local storage
+ Future<void> loadSavedGame() async {
+  try {
+    print("Loading saved game...");
 
-  Future<void> loadSavedGame() async {
-    UserState? saved = await StorageService.loadPuzzle();
+    UserState? saved = await FirestoreService.loadUserState();
+    saved ??= await StorageService.loadPuzzle();
+
     if (saved != null) {
       _currentState = saved;
+      print("Saved game loaded.");
       notifyListeners();
+    } else {
+      print("No saved game found.");
     }
+
+  } catch (e, st) {
+    print("ERROR while loading saved game: $e");
+    print(st);
   }
+}
+
+
+  Future<void> saveGame() async {
+  if (_currentState != null) {
+    // Save to Firestore
+    await FirestoreService.saveUserState(_currentState!);
+  }
+  notifyListeners();
+}
+
 }

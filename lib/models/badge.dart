@@ -33,31 +33,3 @@ class Badges {
     );
   }
 }
-
-
-// final List<Badge> badges = [
-//   Badge(
-//     type: BadgeType.daily3,
-//     title: '3 Days in a Row',
-//     description: 'You have completed 3 days in a row!',
-//     icon: Icons.star,
-//   ),
-//   Badge(
-//     type: BadgeType.daily5,
-//     title: '5 Days in a Row',
-//     description: 'You have completed 5 days in a row!',
-//     icon: Icons.star,
-//   ),
-//   Badge(
-//     type: BadgeType.daily10,
-//     title: '10 Days in a Row',
-//     description: 'You have completed 10 days in a row!',
-//     icon: Icons.star,
-//   ),
-//   Badge(
-//     type: BadgeType.daily30,
-//     title: '30 Days in a Row',
-//     description: 'You have completed 30 days in a row!',
-//     icon: Icons.star,
-//   ),
-// ];

@@ -34,7 +34,7 @@ class _GridBoardState extends State<GridBoard> {
               _handleDraw(details.localPosition, puzzle, provider),
           onPanUpdate: (details) =>
               _handleDraw(details.localPosition, puzzle, provider),
-          onPanEnd: (_) {
+          onPanEnd: (_) async {
             final provider = Provider.of<PuzzleProvider>(
               context,
               listen: false,
@@ -45,23 +45,15 @@ class _GridBoardState extends State<GridBoard> {
               provider.nextStageColor();
               // Trigger celebration screen
               Navigator.pushNamed(context, "/celebrate").then((_) {
-                // showDialog(
-                //   context: context,
-                //   barrierDismissible: false,
-                //   builder: (_) => const Center(child: CircularProgressIndicator()),
-                // );
-
-                // // generate puzzle asynchronously
-                // await context.read<PuzzleProvider>().generateNewPuzzle(8);
               });
             } else {
               // Show a SnackBar to notify the user
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  backgroundColor: Colors.redAccent.shade700,
+                  backgroundColor: Colors.redAccent.shade100,
                   content: const Text(
                     "Oops! Puzzle not complete. Try again.",
-                    style: TextStyle(color: Colors.white),
+                    style: TextStyle(color: Colors.black, fontWeight: FontWeight.w300),
                   ),
                   action: SnackBarAction(
                     label: 'Reset',
@@ -69,8 +61,8 @@ class _GridBoardState extends State<GridBoard> {
                       provider.undo();
                       provider.startTimer();
                     },
-                    textColor: Colors.redAccent,
-                    backgroundColor: Colors.redAccent.shade100,
+                    textColor: Colors.redAccent.shade100,
+                    backgroundColor: Colors.redAccent,
                   ),
                   duration: const Duration(seconds: 4),
                 ),
