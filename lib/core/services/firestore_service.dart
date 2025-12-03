@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:trace_it/models/leaderboard_mode.dart';
 import 'package:trace_it/models/user_state.dart';
 
 class FirestoreService {
@@ -41,7 +42,7 @@ class FirestoreService {
       int totalTime = data['totalTime'] ?? 0;
 
       transaction.update(docRef, {
-        'puzzlesCompleted': puzzlesCompleted + attempts,
+        'puzzlesCompleted': puzzlesCompleted + 1,
         'totalTime': totalTime + elapsedSeconds,
       });
     });
@@ -71,32 +72,32 @@ class FirestoreService {
     }).toList();
   }
 
-  static Stream<List<Map<String, dynamic>>> leaderboardStream({
-    int limit = 10,
-  }) {
-    return FirebaseFirestore.instance
-        .collection('users')
-        .orderBy('puzzlesCompleted', descending: true)
-        .limit(limit)
-        .snapshots()
-        .map((snapshot) {
-          return snapshot.docs.map((doc) {
-            final data = doc.data();
-            final puzzlesCompleted = data['puzzlesCompleted'] ?? 0;
-            final totalTime = data['totalTime'] ?? 0;
+  // static Stream<List<Map<String, dynamic>>> leaderboardStream({
+  //   int limit = 10,
+  // }) {
+  //   return FirebaseFirestore.instance
+  //       .collection('users')
+  //       .orderBy('puzzlesCompleted', descending: true)
+  //       .limit(limit)
+  //       .snapshots()
+  //       .map((snapshot) {
+  //         return snapshot.docs.map((doc) {
+  //           final data = doc.data();
+  //           final puzzlesCompleted = data['puzzlesCompleted'] ?? 0;
+  //           final totalTime = data['totalTime'] ?? 0;
 
-            return {
-              'userId': doc.id,
-              'username': data['username'],
-              'score': puzzlesCompleted / (totalTime + 1),
-              'puzzlesCompleted': puzzlesCompleted,
-              'averageTime': puzzlesCompleted > 0
-                  ? totalTime / puzzlesCompleted
-                  : 0,
-            };
-          }).toList();
-        });
-  }
+  //           return {
+  //             'userId': doc.id,
+  //             'username': data['username'],
+  //             'score': puzzlesCompleted / (totalTime + 1),
+  //             'puzzlesCompleted': puzzlesCompleted,
+  //             'averageTime': puzzlesCompleted > 0
+  //                 ? totalTime / puzzlesCompleted
+  //                 : 0,
+  //           };
+  //         }).toList();
+  //       });
+  // }
 
   // ===== Streak / Badges =====
   static Future<void> updateDailyStreak(String uid) async {
@@ -174,4 +175,81 @@ class FirestoreService {
   // ===== Helper =====
   static bool _isSameDay(DateTime a, DateTime b) =>
       a.year == b.year && a.month == b.month && a.day == b.day;
+
+  // ================== LEADERBOARD ==================
+
+  static Future<void> updateLeaderboard({
+    required String userId,
+    required String username,
+    required int puzzlesCompleted,
+    required int totalTime,
+    String? avatarUrl,
+  }) async {
+    final avgTime = puzzlesCompleted > 0 ? totalTime / puzzlesCompleted : 0.0;
+
+    await FirebaseFirestore.instance.collection('leaderboard').doc(userId).set({
+      'userId': userId,
+      'username': username,
+      'avatarUrl': avatarUrl,
+      'puzzlesCompleted': puzzlesCompleted,
+      'totalTime': totalTime,
+      'averageTime': avgTime,
+      'updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+  }
+
+  static Stream<List<Map<String, dynamic>>> leaderboardStream({
+    LeaderboardMode mode = LeaderboardMode.global,
+    int limit = 10,
+  }) {
+    final now = DateTime.now();
+    DateTime? filterDate;
+
+    // Determine filtering for weekly/monthly
+    if (mode == LeaderboardMode.weekly) {
+      filterDate = now.subtract(const Duration(days: 7));
+    } else if (mode == LeaderboardMode.monthly) {
+      filterDate = DateTime(now.year, now.month); // start of current month
+    }
+
+    return FirebaseFirestore.instance.collection('users').snapshots().map((
+      snapshot,
+    ) {
+      final allUsers = snapshot.docs
+          .map((doc) {
+            final data = doc.data() as Map<String, dynamic>?;
+
+            if (data == null) return <String, dynamic>{};
+
+            final puzzlesCompleted = (data['puzzlesCompleted'] ?? 0) as int;
+            final totalTime = (data['totalTime'] ?? 0) as num;
+            final lastActiveTimestamp = data['lastActiveDate'] as Timestamp?;
+
+            // Skip users outside filter range
+            if (filterDate != null &&
+                (lastActiveTimestamp == null ||
+                    lastActiveTimestamp.toDate().isBefore(filterDate))) {
+              return <String, dynamic>{};
+            }
+
+            return <String, dynamic>{
+              'userId': doc.id,
+              'username': data['username'] ?? 'Player',
+              'score': puzzlesCompleted / (totalTime + 1),
+              'puzzlesCompleted': puzzlesCompleted,
+              'averageTime': puzzlesCompleted > 0
+                  ? totalTime / puzzlesCompleted
+                  : 0.0,
+            };
+          })
+          .where((e) => e.isNotEmpty)
+          .toList();
+
+      // Sort descending by score
+      allUsers.sort((a, b) => (b['score'] as num).compareTo(a['score'] as num));
+
+      // Limit
+      return allUsers.take(limit).toList();
+    });
+  }
 }

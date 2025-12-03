@@ -41,85 +41,103 @@ class _CelebrationPageState extends State<CelebrationPage> {
     _leftController.play();
     _rightController.play();
 
-     _processPuzzleCompletion();
-
+    _processPuzzleCompletion();
   }
-Future<void> _processPuzzleCompletion() async {
-  // Wait 10 seconds before processing
-  await Future.delayed(const Duration(seconds: 10));
 
-  if (!mounted) return;
-
-  final puzzleProvider = context.read<PuzzleProvider>();
-  final leaderboardProvider = context.read<LeaderboardProvider>();
-  final badgeProvider = context.read<BadgeProvider>();
-  final user = FirebaseAuth.instance.currentUser;
-
-  // Show loading dialog after first frame
-  WidgetsBinding.instance.addPostFrameCallback((_) {
+  Future<void> _processPuzzleCompletion() async {
+    // Delay before processing
+    await Future.delayed(const Duration(seconds: 7));
     if (!mounted) return;
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) => const Center(child: CircularProgressIndicator()),
-    );
-  });
 
-  if (user != null) {
-    final attempts = puzzleProvider.attempts;
-    final elapsedSeconds = puzzleProvider.elapsed.inSeconds;
+    final puzzleProvider = context.read<PuzzleProvider>();
+    final leaderboardProvider = context.read<LeaderboardProvider>();
+    final badgeProvider = context.read<BadgeProvider>();
+    final user = FirebaseAuth.instance.currentUser;
 
-    // Save completion to Firestore
-    await FirestoreService.saveGameResult(user.uid, attempts, elapsedSeconds);
-    await FirestoreService.updateDailyStreak(user.uid);
+    // Show loading dialog
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => const Center(child: CircularProgressIndicator()),
+      );
+    });
 
-    // Update badges
-    final badgeData = await FirestoreService.loadUserBadgeData(user.uid);
-    badgeProvider.updateFromFirestore(badgeData);
+    if (user != null) {
+      final attempts = puzzleProvider.attempts;
+      final elapsedSeconds = puzzleProvider.elapsed.inSeconds;
 
-    // Save locally
-    await StorageService.completePuzzle(attempts, elapsedSeconds);
+      // 1️⃣ Save game result (puzzlesCompleted + totalTime)
+      await FirestoreService.saveGameResult(user.uid, attempts, elapsedSeconds);
 
-    // Load updated user data
-    final updatedDoc =
-        await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
-    final data = updatedDoc.data()!;
-    final puzzlesCompleted = (data['puzzlesCompleted'] ?? 0) as int;
-    final totalTime = (data['totalTime'] ?? 0.0) as num;
-    final averageTime = puzzlesCompleted > 0 ? totalTime / puzzlesCompleted : 0.0;
-    final username = data['username'] ?? user.displayName ?? "Player";
+      // 2️⃣ Update streak
+      await FirestoreService.updateDailyStreak(user.uid);
 
-    final index =
-        leaderboardProvider.entries.indexWhere((e) => e.userId == user.uid);
-    final updatedEntry = LeaderboardEntry(
-      userId: user.uid,
-      username: username,
-      puzzlesCompleted: puzzlesCompleted,
-      averageTime: averageTime.toDouble(),
-      totalTime: totalTime.toDouble(),
-    );
+      // 3️⃣ Update badges
+      final badgeData = await FirestoreService.loadUserBadgeData(user.uid);
+      badgeProvider.updateFromFirestore(badgeData);
 
-    if (index >= 0) {
-      leaderboardProvider.entries[index] = updatedEntry;
-    } else {
-      leaderboardProvider.entries.add(updatedEntry);
+      // 4️⃣ Save locally
+      await StorageService.completePuzzle(attempts, elapsedSeconds);
+
+      // 5️⃣ Load updated values from /users
+      final updatedDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .get();
+
+      final data = updatedDoc.data()!;
+
+      final puzzlesCompleted = (data['puzzlesCompleted'] ?? 0) as int;
+      final totalTime = (data['totalTime'] ?? 0) as num;
+      final averageTime = puzzlesCompleted > 0
+          ? totalTime / puzzlesCompleted
+          : 0.0;
+
+      final username = data['username'] ?? user.displayName ?? "Player";
+
+      // 6️⃣ Update LEADERBOARD collection entry
+      await FirestoreService.updateLeaderboard(
+        userId: user.uid,
+        username: username,
+        puzzlesCompleted: puzzlesCompleted,
+        totalTime: totalTime.toInt(),
+      );
+
+      // 7️⃣ Update local provider list (optional — stream already does this)
+      final index = leaderboardProvider.entries.indexWhere(
+        (e) => e.userId == user.uid,
+      );
+
+      final updatedEntry = LeaderboardEntry(
+        userId: user.uid,
+        username: username,
+        puzzlesCompleted: puzzlesCompleted,
+        totalTime: totalTime.toDouble(),
+        averageTime: averageTime.toDouble(),
+        previousRank: 0, // default 0, will be updated later
+      );
+
+      if (index >= 0) {
+        leaderboardProvider.entries[index] = updatedEntry;
+      } else {
+        leaderboardProvider.entries.add(updatedEntry);
+      }
+
+      leaderboardProvider.entries.sort((a, b) => b.score.compareTo(a.score));
+
+      leaderboardProvider.notifyListeners();
     }
 
-    // Sort leaderboard by score
-    leaderboardProvider.entries.sort((a, b) => b.score.compareTo(a.score));
-    leaderboardProvider.notifyListeners();
+    // Reset state & move to next puzzle
+    puzzleProvider.attempts = 0;
+    await puzzleProvider.generateNewPuzzle(8, PuzzlePathMode.heuristicDFS, 15);
+
+    if (mounted) Navigator.pop(context);
+    if (mounted) Navigator.pushNamed(context, "/game");
   }
 
-  // Reset attempts and generate a new puzzle
-  puzzleProvider.attempts = 0;
-  await puzzleProvider.generateNewPuzzle(8, PuzzlePathMode.heuristicDFS, 15);
-
-  if (!mounted) return;
-
-  // Remove loading dialog and navigate
-  Navigator.pop(context);
-  Navigator.pushNamed(context, "/game");
-}
   @override
   void dispose() {
     _topController.dispose();

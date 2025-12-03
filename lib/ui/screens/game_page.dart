@@ -29,7 +29,8 @@ class GamePage extends StatelessWidget {
             ),
 
             const SizedBox(height: 20),
-            Column(
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 Consumer<PuzzleProvider>(
                   builder: (context, provider, _) {

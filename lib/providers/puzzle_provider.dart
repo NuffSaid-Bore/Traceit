@@ -12,7 +12,7 @@ class PuzzleProvider extends ChangeNotifier {
   PuzzleProvider({required this.leaderboardProvider});
   Puzzle? currentPuzzle;
 
-  int attempts = 0;
+  int attempts = 1;
   Duration elapsed = Duration.zero;
   Timer? _timer;
   bool isRunning = false;

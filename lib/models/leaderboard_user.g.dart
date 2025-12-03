@@ -22,13 +22,18 @@ class LeaderboardEntryAdapter extends TypeAdapter<LeaderboardEntry> {
       puzzlesCompleted: fields[2] as int,
       averageTime: fields[3] as double,
       totalTime: fields[4] as double,
+      weeklyCompleted: fields[5] as int,
+      weeklyTime: fields[6] as double,
+      monthlyCompleted: fields[7] as int,
+      monthlyTime: fields[8] as double,
+      previousRank: fields[9] as int,
     );
   }
 
   @override
   void write(BinaryWriter writer, LeaderboardEntry obj) {
     writer
-      ..writeByte(5)
+      ..writeByte(10)
       ..writeByte(0)
       ..write(obj.userId)
       ..writeByte(1)
@@ -38,7 +43,17 @@ class LeaderboardEntryAdapter extends TypeAdapter<LeaderboardEntry> {
       ..writeByte(3)
       ..write(obj.averageTime)
       ..writeByte(4)
-      ..write(obj.totalTime);
+      ..write(obj.totalTime)
+      ..writeByte(5)
+      ..write(obj.weeklyCompleted)
+      ..writeByte(6)
+      ..write(obj.weeklyTime)
+      ..writeByte(7)
+      ..write(obj.monthlyCompleted)
+      ..writeByte(8)
+      ..write(obj.monthlyTime)
+      ..writeByte(9)
+      ..write(obj.previousRank);
   }
 
   @override
