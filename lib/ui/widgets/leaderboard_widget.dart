@@ -107,7 +107,7 @@ class LeaderboardWidget extends StatelessWidget {
             style: TextStyle(
               fontWeight: FontWeight.bold,
               fontSize: 18,
-              color: Colors.white,
+              color: medalColor(rank),
             ),
           ),
           const SizedBox(width: 12),
