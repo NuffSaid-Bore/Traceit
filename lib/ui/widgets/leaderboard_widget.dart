@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:trace_it/models/leaderboard_mode.dart';
@@ -159,7 +158,7 @@ class LeaderboardWidget extends StatelessWidget {
           boxShadow: selected
               ? [
                   BoxShadow(
-                    color: Colors.blueAccent.withOpacity(0.4),
+                    color: Colors.deepPurpleAccent.withOpacity(0.4),
                     blurRadius: 12,
                     spreadRadius: 1,
                   ),
