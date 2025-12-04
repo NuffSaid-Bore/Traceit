@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:trace_it/providers/user_provider.dart';
 import 'package:trace_it/ui/screens/celebration_page.dart';
 import 'package:trace_it/ui/screens/game_page.dart';
 import 'package:trace_it/ui/screens/landing_page.dart';
@@ -11,7 +12,6 @@ import 'providers/leaderboard_provider.dart';
 import 'providers/game_state_provider.dart';
 import 'providers/badge_provider.dart';
 
-
 class ZipApp extends StatelessWidget {
   const ZipApp({super.key});
 
@@ -19,7 +19,6 @@ class ZipApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-
         // GameStateProvider is created first
         ChangeNotifierProvider(create: (_) => GameStateProvider()),
 
@@ -27,16 +26,20 @@ class ZipApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => LeaderboardProvider()),
         ChangeNotifierProvider(create: (_) => BadgeProvider()),
 
+        // UserProvider
+        ChangeNotifierProvider(create: (_) => UserProvider()),
+
         // PuzzleProvider depends on LeaderboardProvider
         ChangeNotifierProxyProvider<LeaderboardProvider, PuzzleProvider>(
-        create: (_) => PuzzleProvider(leaderboardProvider: null),
-        update: (_, leaderboardProvider, previous) {
-          previous ??= PuzzleProvider(leaderboardProvider: leaderboardProvider);
-          previous.leaderboardProvider = leaderboardProvider;
-          return previous;
-        },
-      ),
-
+          create: (_) => PuzzleProvider(leaderboardProvider: null),
+          update: (_, leaderboardProvider, previous) {
+            previous ??= PuzzleProvider(
+              leaderboardProvider: leaderboardProvider,
+            );
+            previous.leaderboardProvider = leaderboardProvider;
+            return previous;
+          },
+        ),
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
@@ -50,7 +53,7 @@ class ZipApp extends StatelessWidget {
           "/game": (_) => const GamePage(),
           "/celebrate": (_) => const CelebrationPage(),
         },
-      )
-      );
+      ),
+    );
   }
 }

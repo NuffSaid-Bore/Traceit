@@ -183,14 +183,12 @@ class FirestoreService {
     required String username,
     required int puzzlesCompleted,
     required int totalTime,
-    String? avatarUrl,
   }) async {
     final avgTime = puzzlesCompleted > 0 ? totalTime / puzzlesCompleted : 0.0;
 
     await FirebaseFirestore.instance.collection('leaderboard').doc(userId).set({
       'userId': userId,
       'username': username,
-      'avatarUrl': avatarUrl,
       'puzzlesCompleted': puzzlesCompleted,
       'totalTime': totalTime,
       'averageTime': avgTime,

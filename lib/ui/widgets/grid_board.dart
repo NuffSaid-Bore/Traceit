@@ -52,7 +52,7 @@ class _GridBoardState extends State<GridBoard> {
                 SnackBar(
                   backgroundColor: Colors.redAccent.shade100,
                   content: const Text(
-                    "Oops! Puzzle not complete. Try again.",
+                    "Oops! 😂 Failed to Solve the Puzzle. Try again.",
                     style: TextStyle(color: Colors.black, fontWeight: FontWeight.w300),
                   ),
                   action: SnackBarAction(

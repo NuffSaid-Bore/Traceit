@@ -137,6 +137,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 _showPassword
                                     ? Icons.visibility
                                     : Icons.visibility_off,
+                                color: Colors.black54,
                               ),
                               onPressed: () => setState(
                                 () => _showPassword = !_showPassword,

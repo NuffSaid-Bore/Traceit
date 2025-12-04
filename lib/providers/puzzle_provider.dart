@@ -5,7 +5,6 @@ import '../models/puzzle.dart';
 import '../core/utils/puzzle_generator.dart';
 
 class PuzzleProvider extends ChangeNotifier {
-
   LeaderboardProvider? leaderboardProvider;
   int currentWinStreak = 0;
 
@@ -40,13 +39,16 @@ class PuzzleProvider extends ChangeNotifier {
   }
 
   /// Generate a new puzzle
-  Future<void> generateNewPuzzle(int size, PuzzlePathMode mode, int totalNumbers) async {
+  Future<void> generateNewPuzzle(
+    int size,
+    PuzzlePathMode mode,
+    int totalNumbers,
+  ) async {
     currentPuzzle = await PuzzleGenerator.generatePuzzleAsync(
       size: size,
       mode: mode,
       totalNumbers: totalNumbers,
-
-      );
+    );
     startNewGame();
     notifyListeners();
   }
@@ -56,7 +58,7 @@ class PuzzleProvider extends ChangeNotifier {
     elapsed = Duration.zero;
     drawnPath.clear();
     visitedCells.clear();
-    attempts = 0;
+    attempts = 1;
     currentWinStreak = 0;
     notifyListeners();
   }
@@ -107,21 +109,42 @@ class PuzzleProvider extends ChangeNotifier {
     final puzzle = currentPuzzle;
     if (puzzle == null) return false;
 
-    // Must visit all cells
+    // 1. Must visit all cells exactly once
     if (visitedCells.length != puzzle.rows * puzzle.cols) return false;
 
-    // Check numbers are in order along visitedCells
-    final numberPositions = puzzle.numbers.entries.toList()
+    final uniqueVisited = visitedCells.toSet();
+    if (uniqueVisited.length != visitedCells.length)
+      return false; // no duplicates
+
+    // 2. Get number → cell mapping sorted by number
+    final sortedNumbers = puzzle.numbers.entries.toList()
       ..sort((a, b) => a.key.compareTo(b.key));
 
-    for (int i = 0; i < numberPositions.length; i++) {
-      if (!visitedCells.contains(numberPositions[i].value)) return false;
+    // 3. Check that numerical cells appear in the visited path IN ORDER
+    int lastIndex = -1;
+    for (var entry in sortedNumbers) {
+      final numberCell = entry.value;
+
+      int indexInPath = visitedCells.indexOf(numberCell);
+      if (indexInPath == -1) return false; // number not visited
+
+      if (indexInPath < lastIndex) return false; // out of order
+
+      lastIndex = indexInPath;
+    }
+
+    // 4. OPTIONAL: enforce adjacency (no jumping)
+    for (int i = 1; i < visitedCells.length; i++) {
+      final prev = visitedCells[i - 1];
+      final curr = visitedCells[i];
+
+      if ((prev.dx - curr.dx).abs() + (prev.dy - curr.dy).abs() != 1) {
+        return false; // not adjacent
+      }
     }
 
     return true;
   }
-
-
 
   /// Undo functionality (reset board)
   void undo() {

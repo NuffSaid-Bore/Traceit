@@ -154,7 +154,7 @@ class LeaderboardWidget extends StatelessWidget {
         duration: const Duration(milliseconds: 250),
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
         decoration: BoxDecoration(
-          color: selected ? Colors.blueAccent.withOpacity(0.7) : Colors.white12,
+          color: selected ? Colors.deepPurpleAccent.withOpacity(0.7) : Colors.white12,
           borderRadius: BorderRadius.circular(12),
           boxShadow: selected
               ? [

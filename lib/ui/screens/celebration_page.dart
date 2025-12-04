@@ -46,7 +46,7 @@ class _CelebrationPageState extends State<CelebrationPage> {
 
   Future<void> _processPuzzleCompletion() async {
     // Delay before processing
-    await Future.delayed(const Duration(seconds: 7));
+    await Future.delayed(const Duration(seconds: 4));
     if (!mounted) return;
 
     final puzzleProvider = context.read<PuzzleProvider>();
@@ -68,20 +68,15 @@ class _CelebrationPageState extends State<CelebrationPage> {
       final attempts = puzzleProvider.attempts;
       final elapsedSeconds = puzzleProvider.elapsed.inSeconds;
 
-      // 1️⃣ Save game result (puzzlesCompleted + totalTime)
       await FirestoreService.saveGameResult(user.uid, attempts, elapsedSeconds);
 
-      // 2️⃣ Update streak
       await FirestoreService.updateDailyStreak(user.uid);
 
-      // 3️⃣ Update badges
       final badgeData = await FirestoreService.loadUserBadgeData(user.uid);
       badgeProvider.updateFromFirestore(badgeData);
 
-      // 4️⃣ Save locally
       await StorageService.completePuzzle(attempts, elapsedSeconds);
 
-      // 5️⃣ Load updated values from /users
       final updatedDoc = await FirebaseFirestore.instance
           .collection('users')
           .doc(user.uid)
@@ -97,7 +92,6 @@ class _CelebrationPageState extends State<CelebrationPage> {
 
       final username = data['username'] ?? user.displayName ?? "Player";
 
-      // 6️⃣ Update LEADERBOARD collection entry
       await FirestoreService.updateLeaderboard(
         userId: user.uid,
         username: username,
@@ -105,7 +99,6 @@ class _CelebrationPageState extends State<CelebrationPage> {
         totalTime: totalTime.toInt(),
       );
 
-      // 7️⃣ Update local provider list (optional — stream already does this)
       final index = leaderboardProvider.entries.indexWhere(
         (e) => e.userId == user.uid,
       );
@@ -116,7 +109,7 @@ class _CelebrationPageState extends State<CelebrationPage> {
         puzzlesCompleted: puzzlesCompleted,
         totalTime: totalTime.toDouble(),
         averageTime: averageTime.toDouble(),
-        previousRank: 0, // default 0, will be updated later
+        previousRank: 0,
       );
 
       if (index >= 0) {
@@ -130,7 +123,6 @@ class _CelebrationPageState extends State<CelebrationPage> {
       leaderboardProvider.notifyListeners();
     }
 
-    // Reset state & move to next puzzle
     puzzleProvider.attempts = 0;
     await puzzleProvider.generateNewPuzzle(8, PuzzlePathMode.heuristicDFS, 15);
 
