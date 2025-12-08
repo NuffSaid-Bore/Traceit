@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:trace_it/models/win_results.dart';
 import 'package:trace_it/ui/painters/grid_painter.dart';
 import '../../models/puzzle.dart';
 import '../../providers/puzzle_provider.dart';
@@ -40,19 +41,40 @@ class _GridBoardState extends State<GridBoard> {
               listen: false,
             );
 
-            if (provider.checkWin()) {
+            final result = provider.checkWin();
+
+            if (result == WinResult.success) {
               provider.stopTimer();
               provider.nextStageColor();
-              // Trigger celebration screen
-              Navigator.pushNamed(context, "/celebrate").then((_) {
-              });
+              Navigator.pushNamed(context, "/celebrate");
             } else {
-              // Show a SnackBar to notify the user
+              String message;
+
+              switch (result) {
+                case WinResult.notAllCellsVisited:
+                  message = "Oops! You missed some grid cells!";
+                  break;
+                case WinResult.duplicateCell:
+                  message = "Oops! You revisited a cell!";
+                  break;
+                case WinResult.numberMissing:
+                  message = "Oops! You Missed a Number...";
+                  break;
+                case WinResult.numberOrderIncorrect:
+                  message = "Oops! Numbers weren't in order!";
+                  break;
+                case WinResult.nonAdjacentMove:
+                  message = "Invalid move: You jumped or moved diagonally!";
+                  break;
+                default:
+                  message = "Oops! Could not complete the puzzle.";
+              }
+
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   backgroundColor: Colors.redAccent.shade100,
-                  content: const Text(
-                    "Oops! 😂 Failed to Solve the Puzzle. Try again.",
+                  content: Text(
+                    message,
                     style: TextStyle(color: Colors.black, fontWeight: FontWeight.w300),
                   ),
                   action: SnackBarAction(

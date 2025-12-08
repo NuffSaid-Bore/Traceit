@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:trace_it/models/win_results.dart';
 import 'package:trace_it/providers/leaderboard_provider.dart';
 import '../models/puzzle.dart';
 import '../core/utils/puzzle_generator.dart';
@@ -105,16 +106,16 @@ class PuzzleProvider extends ChangeNotifier {
   }
 
   /// Check win condition
-  bool checkWin() {
+  WinResult checkWin() {
     final puzzle = currentPuzzle;
-    if (puzzle == null) return false;
+    if (puzzle == null) return WinResult.notAllCellsVisited;
 
     // 1. Must visit all cells exactly once
-    if (visitedCells.length != puzzle.rows * puzzle.cols) return false;
+    if (visitedCells.length != puzzle.rows * puzzle.cols) {return WinResult.notAllCellsVisited;}
 
     final uniqueVisited = visitedCells.toSet();
     if (uniqueVisited.length != visitedCells.length)
-      return false; // no duplicates
+      {return WinResult.duplicateCell;} // no duplicates
 
     // 2. Get number → cell mapping sorted by number
     final sortedNumbers = puzzle.numbers.entries.toList()
@@ -126,9 +127,9 @@ class PuzzleProvider extends ChangeNotifier {
       final numberCell = entry.value;
 
       int indexInPath = visitedCells.indexOf(numberCell);
-      if (indexInPath == -1) return false; // number not visited
+      if (indexInPath == -1) return WinResult.numberMissing; // number not visited
 
-      if (indexInPath < lastIndex) return false; // out of order
+      if (indexInPath < lastIndex) return WinResult.numberOrderIncorrect; // out of order
 
       lastIndex = indexInPath;
     }
@@ -139,11 +140,11 @@ class PuzzleProvider extends ChangeNotifier {
       final curr = visitedCells[i];
 
       if ((prev.dx - curr.dx).abs() + (prev.dy - curr.dy).abs() != 1) {
-        return false; // not adjacent
+        WinResult.nonAdjacentMove; // not adjacent
       }
     }
 
-    return true;
+    return WinResult.success;
   }
 
   /// Undo functionality (reset board)

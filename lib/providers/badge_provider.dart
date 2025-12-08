@@ -58,10 +58,22 @@ class BadgeProvider extends ChangeNotifier {
 
   /// Update badges and daily streak from Firestore data
   void updateFromFirestore(Map<String, dynamic> data) {
-    dailyStreak = data['dailyStreak'] ?? 0;
-    earned = Map<String, bool>.from(data['earnedBadges'] ?? {});
-    notifyListeners();
-  }
+  dailyStreak = data['dailyStreak'] ?? 0;
+
+  // Compute badges in Firestore
+  FirestoreService.updateBadges(dailyStreak);
+
+  // Generate earned badges from streak
+  earned = {
+    "daily3": dailyStreak >= 3,
+    "daily5": dailyStreak >= 5,
+    "daily10": dailyStreak >= 10,
+    "daily30": dailyStreak >= 30,
+  };
+
+  notifyListeners();
+}
+
 
   /// Reset streak if user resets game or increases attempts
   Future<void> resetStreak() async {
@@ -72,7 +84,7 @@ class BadgeProvider extends ChangeNotifier {
   }
 
   /// Update badges based on streak
-  void _updateBadges() {
+  void _updateBadges() async{
     int streak = currentStreak;
 
     _badges = _badges.map((b) {
@@ -100,5 +112,9 @@ class BadgeProvider extends ChangeNotifier {
         earnedDate: earnedNow ? DateTime.now() : b.earnedDate,
       );
     }).toList();
+
+     await FirestoreService.updateBadges(streak);
+
+    notifyListeners();
   }
 }

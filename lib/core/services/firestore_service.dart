@@ -130,7 +130,8 @@ class FirestoreService {
     });
   }
 
-  static Future<void> updateBadges(String uid, int dailyStreak) async {
+  static Future<void> updateBadges( int dailyStreak) async {
+    final uid = FirebaseAuth.instance.currentUser!.uid;
     final doc = FirebaseFirestore.instance.collection("users").doc(uid);
 
     final earned = {

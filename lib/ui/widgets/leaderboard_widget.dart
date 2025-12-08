@@ -11,7 +11,7 @@ class LeaderboardWidget extends StatelessWidget {
     if (i == 0) return "🥇";
     if (i == 1) return "🥈";
     if (i == 2) return "🥉";
-    return "";
+    return "🎖️";
   }
 
   Color medalColor(int i) {
@@ -65,9 +65,9 @@ class LeaderboardWidget extends StatelessWidget {
                 bool movedDown = oldRank < newRank;
 
                 Offset offset = movedUp
-                    ? const Offset(0, 0.3) 
+                    ? const Offset(0, 0.3)
                     : movedDown
-                    ? const Offset(0, -0.3) 
+                    ? const Offset(0, -0.3)
                     : Offset.zero;
 
                 return AnimatedSlide(
@@ -153,7 +153,9 @@ class LeaderboardWidget extends StatelessWidget {
         duration: const Duration(milliseconds: 250),
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
         decoration: BoxDecoration(
-          color: selected ? Colors.deepPurpleAccent.withOpacity(0.7) : Colors.white12,
+          color: selected
+              ? Colors.deepPurpleAccent.withOpacity(0.7)
+              : Colors.white12,
           borderRadius: BorderRadius.circular(12),
           boxShadow: selected
               ? [
