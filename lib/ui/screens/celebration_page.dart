@@ -225,7 +225,7 @@ class _CelebrationPageState extends State<CelebrationPage> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Lottie.asset(
-                    'assets/animations/trophy_animation.json',
+                    'assets/animation/trophy_animation.json',
                     width: 200,
                     height: 200,
                     repeat: false,

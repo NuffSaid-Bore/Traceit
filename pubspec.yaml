@@ -20,6 +20,12 @@ dependencies:
   liquid_pull_refresh: ^1.0.6
   lottie: ^2.3.0
   rive: ^0.13.20
+  flutter_launcher_icons: ^0.14.4
+
+flutter_icons:
+  android: true
+  ios: true
+  image_path: "assets/images/app_logo.png"
   
 
 dev_dependencies:
