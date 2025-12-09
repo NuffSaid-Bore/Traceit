@@ -9,7 +9,9 @@ class FirestoreService {
   // ===== User GameState =====
   static Future<void> saveUserState(UserState state) async {
     final uid = FirebaseAuth.instance.currentUser!.uid;
-    await _users.doc(uid).set(state.toMap(), SetOptions(merge: true));
+    await _users.doc(uid).set({
+      'savedGame': state.toMap()['savedGame'],
+    }, SetOptions(merge: true));
   }
 
   static Future<UserState?> loadUserState() async {
@@ -17,12 +19,15 @@ class FirestoreService {
     if (uid == null) return null;
     final doc = await _users.doc(uid).get();
     if (!doc.exists) return null;
-    return UserState.fromMap(doc.data()!);
+    final data = doc.data();
+    if (data == null || !data.containsKey('savedGame')) return null;
+
+    return UserState.fromMap(data);
   }
 
   static Future<void> clearUserState() async {
     final uid = FirebaseAuth.instance.currentUser!.uid;
-    await _users.doc(uid).update({'currentPuzzle': null});
+    await _users.doc(uid).update({'savedGame': FieldValue.delete()});
   }
 
   // ===== Leaderboard =====
@@ -72,33 +77,6 @@ class FirestoreService {
     }).toList();
   }
 
-  // static Stream<List<Map<String, dynamic>>> leaderboardStream({
-  //   int limit = 10,
-  // }) {
-  //   return FirebaseFirestore.instance
-  //       .collection('users')
-  //       .orderBy('puzzlesCompleted', descending: true)
-  //       .limit(limit)
-  //       .snapshots()
-  //       .map((snapshot) {
-  //         return snapshot.docs.map((doc) {
-  //           final data = doc.data();
-  //           final puzzlesCompleted = data['puzzlesCompleted'] ?? 0;
-  //           final totalTime = data['totalTime'] ?? 0;
-
-  //           return {
-  //             'userId': doc.id,
-  //             'username': data['username'],
-  //             'score': puzzlesCompleted / (totalTime + 1),
-  //             'puzzlesCompleted': puzzlesCompleted,
-  //             'averageTime': puzzlesCompleted > 0
-  //                 ? totalTime / puzzlesCompleted
-  //                 : 0,
-  //           };
-  //         }).toList();
-  //       });
-  // }
-
   // ===== Streak / Badges =====
   static Future<void> updateDailyStreak(String uid) async {
     final doc = FirebaseFirestore.instance.collection("users").doc(uid);
@@ -130,7 +108,7 @@ class FirestoreService {
     });
   }
 
-  static Future<void> updateBadges( int dailyStreak) async {
+  static Future<void> updateBadges(int dailyStreak) async {
     final uid = FirebaseAuth.instance.currentUser!.uid;
     final doc = FirebaseFirestore.instance.collection("users").doc(uid);
 

@@ -1,6 +1,11 @@
 import 'dart:async';
+import 'dart:core';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:trace_it/models/win_results.dart';
+import 'package:trace_it/providers/game_state_provider.dart';
 import 'package:trace_it/providers/leaderboard_provider.dart';
 import '../models/puzzle.dart';
 import '../core/utils/puzzle_generator.dart';
@@ -25,6 +30,48 @@ class PuzzleProvider extends ChangeNotifier {
   int currentStreak = 0;
   int maxStreak = 0;
 
+  int failCount = 0;
+  int puzzlesCompleted = 0;
+  num totalTime = 0;
+  double averageTime = 0;
+  int currentDifficulty = 1;
+
+  bool userStatsLoaded = false;
+
+  int computeDynamicDifficulty() {
+    int base = currentDifficulty;
+
+    // Your local difficulty logic
+    if (currentStreak >= 3) base += 1;
+    if (failCount >= 2) base -= 1;
+
+    // Firestore-based difficulty
+    if (averageTime < 20) base += 1;
+
+    return base.clamp(1, 10);
+  }
+
+  Future<void> loadUserStats() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    final doc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .get();
+
+    final data = doc.data() ?? {};
+
+    puzzlesCompleted = (data['puzzlesCompleted'] ?? 0) as int;
+    totalTime = (data['totalTime'] ?? 0) as num;
+
+    averageTime = puzzlesCompleted > 0 ? totalTime / puzzlesCompleted : 0.0;
+
+    userStatsLoaded = true;
+
+    notifyListeners();
+  }
+
   /// Call when a puzzle is won
   void recordWin() {
     currentStreak++;
@@ -44,12 +91,39 @@ class PuzzleProvider extends ChangeNotifier {
     int size,
     PuzzlePathMode mode,
     int totalNumbers,
+    BuildContext context,
   ) async {
     currentPuzzle = await PuzzleGenerator.generatePuzzleAsync(
       size: size,
       mode: mode,
       totalNumbers: totalNumbers,
     );
+
+    final gameState = context.read<GameStateProvider>();
+    gameState.starstNewGame(currentPuzzle!, difficulty: currentDifficulty);
+    startNewGame();
+    notifyListeners();
+  }
+
+  /// Generate a new difficult puzzle
+  Future<void> generateNewDifficultPuzzle(
+    int size,
+    PuzzlePathMode mode,
+    int totalNumbers,
+    BuildContext context,
+  ) async {
+    if (!userStatsLoaded) {
+      await loadUserStats();
+    }
+    final difficulty = computeDynamicDifficulty();
+    currentPuzzle = await PuzzleGenerator.generateNewDifficultPuzzleAsync(
+      size: size,
+      mode: mode,
+      totalNumbers: totalNumbers,
+      difficulty: difficulty,
+    );
+    final gameState = context.read<GameStateProvider>();
+    gameState.starstNewGame(currentPuzzle!, difficulty: currentDifficulty);
     startNewGame();
     notifyListeners();
   }
@@ -87,6 +161,7 @@ class PuzzleProvider extends ChangeNotifier {
     drawnPath.clear();
     visitedCells.clear();
     attempts++;
+    failCount++;
     currentWinStreak = 0;
     notifyListeners();
   }
@@ -111,11 +186,14 @@ class PuzzleProvider extends ChangeNotifier {
     if (puzzle == null) return WinResult.notAllCellsVisited;
 
     // 1. Must visit all cells exactly once
-    if (visitedCells.length != puzzle.rows * puzzle.cols) {return WinResult.notAllCellsVisited;}
+    if (visitedCells.length != puzzle.rows * puzzle.cols) {
+      return WinResult.notAllCellsVisited;
+    }
 
     final uniqueVisited = visitedCells.toSet();
-    if (uniqueVisited.length != visitedCells.length)
-      {return WinResult.duplicateCell;} // no duplicates
+    if (uniqueVisited.length != visitedCells.length) {
+      return WinResult.duplicateCell;
+    } // no duplicates
 
     // 2. Get number → cell mapping sorted by number
     final sortedNumbers = puzzle.numbers.entries.toList()
@@ -127,9 +205,11 @@ class PuzzleProvider extends ChangeNotifier {
       final numberCell = entry.value;
 
       int indexInPath = visitedCells.indexOf(numberCell);
-      if (indexInPath == -1) return WinResult.numberMissing; // number not visited
+      if (indexInPath == -1)
+        {return WinResult.numberMissing; }// number not visited
 
-      if (indexInPath < lastIndex) return WinResult.numberOrderIncorrect; // out of order
+      if (indexInPath < lastIndex)
+        {return WinResult.numberOrderIncorrect;} // out of order
 
       lastIndex = indexInPath;
     }
@@ -155,6 +235,9 @@ class PuzzleProvider extends ChangeNotifier {
   /// Cycle line color per stage
   void nextStageColor() {
     List<Color> colors = [
+      Colors.yellow,
+      Colors.pinkAccent,
+      Colors.white,
       Colors.blue,
       Colors.red,
       Colors.green,

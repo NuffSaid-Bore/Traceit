@@ -5,12 +5,14 @@ class GridLinePainter extends CustomPainter {
   final int cols;
   final List<Offset> drawnPath; // points in pixel coordinates
   final Color lineColor;
+  final Map<Offset, List<String>> barriers;
 
   GridLinePainter({
     required this.rows,
     required this.cols,
     required this.drawnPath,
     required this.lineColor,
+    this.barriers = const {},
   });
 
   @override
@@ -49,6 +51,52 @@ class GridLinePainter extends CustomPainter {
 
       canvas.drawPath(path, pathPaint);
     }
+    _drawBarriers(canvas, cellWidth, cellHeight);
+  }
+
+    void _drawBarriers(Canvas canvas, double cellW, double cellH) {
+    final paint = Paint()
+      ..color = Colors.deepOrange
+      ..strokeWidth = 4
+      ..strokeCap = StrokeCap.square;
+
+    barriers.forEach((cell, dirs) {
+      final x = cell.dx * cellW;
+      final y = cell.dy * cellH;
+
+      for (var dir in dirs) {
+        switch (dir) {
+          case "up":
+            canvas.drawLine(
+              Offset(x, y),
+              Offset(x + cellW, y),
+              paint,
+            );
+            break;
+          case "down":
+            canvas.drawLine(
+              Offset(x, y + cellH),
+              Offset(x + cellW, y + cellH),
+              paint,
+            );
+            break;
+          case "left":
+            canvas.drawLine(
+              Offset(x, y),
+              Offset(x, y + cellH),
+              paint,
+            );
+            break;
+          case "right":
+            canvas.drawLine(
+              Offset(x + cellW, y),
+              Offset(x + cellW, y + cellH),
+              paint,
+            );
+            break;
+        }
+      }
+    });
   }
 
   @override

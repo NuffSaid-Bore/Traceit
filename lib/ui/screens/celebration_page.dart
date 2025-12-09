@@ -68,7 +68,7 @@ class _CelebrationPageState extends State<CelebrationPage> {
       final attempts = puzzleProvider.attempts;
       final elapsedSeconds = puzzleProvider.elapsed.inSeconds;
 
-      await FirestoreService.saveGameResult(user.uid, attempts, elapsedSeconds);
+      await FirestoreService.saveGameResult(user.uid, attempts, elapsedSeconds)  ;
 
       await FirestoreService.updateDailyStreak(user.uid);
 
@@ -124,7 +124,12 @@ class _CelebrationPageState extends State<CelebrationPage> {
     }
 
     puzzleProvider.attempts = 0;
-    await puzzleProvider.generateNewPuzzle(8, PuzzlePathMode.heuristicDFS, 15);
+    await puzzleProvider.generateNewDifficultPuzzle(
+      8,
+      PuzzlePathMode.heuristicDFS,
+      15,
+      context,
+    );
 
     if (mounted) Navigator.pop(context);
     if (mounted) Navigator.pushNamed(context, "/game");

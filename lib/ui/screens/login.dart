@@ -1,6 +1,8 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:trace_it/providers/puzzle_provider.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -21,6 +23,7 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isLoading = true);
+    final provider = context.read<PuzzleProvider>();
 
     try {
       await _auth.signInWithEmailAndPassword(
@@ -31,6 +34,9 @@ class _LoginScreenState extends State<LoginScreen> {
       // Save login state
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('isLoggedIn', true);
+
+     await provider.loadUserStats();
+
 
       Navigator.pushReplacementNamed(context, '/home');
     } on FirebaseAuthException catch (e) {

@@ -46,6 +46,7 @@ class _GridBoardState extends State<GridBoard> {
             if (result == WinResult.success) {
               provider.stopTimer();
               provider.nextStageColor();
+              provider.failCount = 0;
               Navigator.pushNamed(context, "/celebrate");
             } else {
               String message;
@@ -75,7 +76,10 @@ class _GridBoardState extends State<GridBoard> {
                   backgroundColor: Colors.redAccent.shade100,
                   content: Text(
                     message,
-                    style: TextStyle(color: Colors.black, fontWeight: FontWeight.w300),
+                    style: TextStyle(
+                      color: Colors.black,
+                      fontWeight: FontWeight.w300,
+                    ),
                   ),
                   action: SnackBarAction(
                     label: 'Reset',
@@ -99,6 +103,7 @@ class _GridBoardState extends State<GridBoard> {
               cols: puzzle.cols,
               drawnPath: provider.drawnPath,
               lineColor: provider.lineColor,
+              barriers: puzzle.barriers,
             ),
             child: Stack(
               children: [
@@ -137,8 +142,24 @@ class _GridBoardState extends State<GridBoard> {
     if (provider.visitedCells.isNotEmpty) {
       Offset last = provider.visitedCells.last;
       if ((last.dx - cell.dx).abs() + (last.dy - cell.dy).abs() > 1) return;
+      // Prevent blocked movement
+      if (_isMoveBlocked(last, cell, puzzle)) return;
     }
 
     provider.addCell(cell, _cellCenter(cell));
+  }
+
+  bool _isMoveBlocked(Offset from, Offset to, Puzzle puzzle) {
+    final dx = (to.dx - from.dx);
+    final dy = (to.dy - from.dy);
+
+    final barriers = puzzle.barriers[from] ?? [];
+
+    if (dx == 1 && dy == 0 && barriers.contains("right")) return true;
+    if (dx == -1 && dy == 0 && barriers.contains("left")) return true;
+    if (dx == 0 && dy == 1 && barriers.contains("down")) return true;
+    if (dx == 0 && dy == -1 && barriers.contains("up")) return true;
+
+    return false;
   }
 }

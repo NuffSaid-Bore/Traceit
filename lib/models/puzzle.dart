@@ -17,11 +17,15 @@ class Puzzle {
   @HiveField(3)
   final Map<int, Offset> numbers;
 
+  @HiveField(4)
+  final Map<Offset, List<String>> barriers;
+
   Puzzle({
     required this.rows,
     required this.cols,
     required this.path,
     required this.numbers,
+    this.barriers = const {},
   });
 
   /// Convert Puzzle to Map for Firestore / JSON

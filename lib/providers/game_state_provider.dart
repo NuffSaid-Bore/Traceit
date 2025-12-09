@@ -12,7 +12,7 @@ class GameStateProvider extends ChangeNotifier {
   bool get hasSavedGame => _currentState != null;
 
   /// Start a new game
-  void startNewGame(Puzzle puzzle, {int difficulty = 1}) async {
+  void starstNewGame(Puzzle puzzle, {int difficulty = 1}) async {
     _currentState = UserState(puzzle: puzzle, difficulty: difficulty);
     await _saveState(); // local save
     await FirestoreService.saveUserState(_currentState!); // cloud save
@@ -90,5 +90,14 @@ class GameStateProvider extends ChangeNotifier {
   }
   notifyListeners();
 }
+
+Future<void> clearAllState() async {
+  _currentState = null;
+  notifyListeners();
+
+  // Clear local storage
+  await StorageService.clearPuzzle();
+}
+
 
 }

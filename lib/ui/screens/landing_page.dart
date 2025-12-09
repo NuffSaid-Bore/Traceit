@@ -1,7 +1,9 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:liquid_pull_refresh/liquid_pull_refresh.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:trace_it/core/services/firestore_service.dart';
 import 'package:trace_it/core/utils/puzzle_generator.dart';
 import 'package:trace_it/providers/game_state_provider.dart';
 import 'package:trace_it/providers/leaderboard_provider.dart';
@@ -20,6 +22,7 @@ class LandingPage extends StatefulWidget {
 class _LandingPageState extends State<LandingPage> {
   bool loading = true;
   bool _showPassword = false;
+  bool _isLoading = false;
 
   final _formKey = GlobalKey<FormState>();
   final GlobalKey<LiquidPullRefreshState> _refreshIndicatorKey =
@@ -64,10 +67,53 @@ class _LandingPageState extends State<LandingPage> {
   }
 
   Future<void> _logout(BuildContext context) async {
+  try {
+    // 1. Clear any in-memory game state and local Hive storage
+    await context.read<GameStateProvider>().clearAllState();
+
+    // 2. Update SharedPreferences
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool("isLoggedIn", false);
 
+    // 3. Sign out from Firebase
+    await FirebaseAuth.instance.signOut();
+
+    // 4. Navigate to login screen
     Navigator.pushReplacementNamed(context, "/login");
+
+  } catch (e, st) {
+    print("Logout error: $e");
+    print(st);
+  }
+}
+
+
+  Future<void> _updateProfile() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() => _isLoading = true);
+
+    try {
+      final userProvider = context.read<UserProvider>();
+      if (!_formKey.currentState!.validate()) return;
+
+      await userProvider.updateProfile(
+        newUsername: _usernameController.text.trim(),
+        newPassword: _passwordController.text.trim(),
+      );
+
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text("Profile updated!")));
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.toString())));
+    } finally {
+      setState(() => _isLoading = false);
+    }
   }
 
   @override
@@ -75,7 +121,6 @@ class _LandingPageState extends State<LandingPage> {
     final gameProvider = Provider.of<GameStateProvider>(
       context,
     ); // listen true!
-    final userProvider = context.watch<UserProvider>();
 
     if (loading) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
@@ -176,6 +221,7 @@ class _LandingPageState extends State<LandingPage> {
                 child: Column(
                   children: [
                     TextFormField(
+                      style: const TextStyle(color: Colors.black),
                       controller: _usernameController,
                       decoration: const InputDecoration(
                         labelText: "Username",
@@ -187,6 +233,7 @@ class _LandingPageState extends State<LandingPage> {
                     const SizedBox(height: 12),
 
                     TextFormField(
+                      style: const TextStyle(color: Colors.black),
                       controller: _passwordController,
                       obscureText: !_showPassword,
                       decoration: InputDecoration(
@@ -197,6 +244,7 @@ class _LandingPageState extends State<LandingPage> {
                             _showPassword
                                 ? Icons.visibility
                                 : Icons.visibility_off,
+                            color: Colors.black,
                           ),
                           onPressed: () =>
                               setState(() => _showPassword = !_showPassword),
@@ -206,34 +254,26 @@ class _LandingPageState extends State<LandingPage> {
                           value!.length < 6 ? "Minimum 6 characters" : null,
                     ),
                     const SizedBox(height: 20),
-
-                    ElevatedButton(
-                      onPressed: () async {
-                        if (!_formKey.currentState!.validate()) return;
-
-                        await userProvider.updateProfile(
-                          newUsername: _usernameController.text.trim(),
-                          newPassword: _passwordController.text.trim(),
-                        );
-
-                        if (mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text("Profile updated!")),
-                          );
-                        }
-                      },
-                      child: const Text("Update Profile"),
-                    ),
+                    _isLoading
+                        ? const CircularProgressIndicator()
+                        : ElevatedButton(
+                            onPressed: _updateProfile,
+                            child: const Text("Update Profile"),
+                          ),
                   ],
                 ),
               ),
 
               const Divider(height: 20, color: Colors.black),
-              ListTile(
-                leading: const Icon(Icons.logout),
-                title: const Text("Logout"),
-                splashColor: Colors.deepPurpleAccent[500],
-                onTap: () => _logout(context),
+              Card(
+                color: Colors.deepPurpleAccent.shade100,
+                semanticContainer: true,
+                child: ListTile(
+                  leading: const Icon(Icons.logout),
+                  title: const Text("Logout"),
+                  splashColor: Colors.deepPurpleAccent[500],
+                  onTap: () => _logout(context),
+                ),
               ),
             ],
           ),
@@ -314,11 +354,13 @@ class _LandingPageState extends State<LandingPage> {
                       builder: (_) =>
                           const Center(child: CircularProgressIndicator()),
                     );
+                    provider.currentStreak = 0;
 
                     await provider.generateNewPuzzle(
                       8,
                       PuzzlePathMode.heuristicDFS,
                       15,
+                      context,
                     );
 
                     if (mounted) Navigator.pop(context);

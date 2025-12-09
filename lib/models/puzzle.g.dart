@@ -21,13 +21,15 @@ class PuzzleAdapter extends TypeAdapter<Puzzle> {
       cols: fields[1] as int,
       path: (fields[2] as List).cast<Offset>(),
       numbers: (fields[3] as Map).cast<int, Offset>(),
+      barriers: (fields[4] as Map).map((dynamic k, dynamic v) =>
+          MapEntry(k as Offset, (v as List).cast<String>())),
     );
   }
 
   @override
   void write(BinaryWriter writer, Puzzle obj) {
     writer
-      ..writeByte(4)
+      ..writeByte(5)
       ..writeByte(0)
       ..write(obj.rows)
       ..writeByte(1)
@@ -35,7 +37,9 @@ class PuzzleAdapter extends TypeAdapter<Puzzle> {
       ..writeByte(2)
       ..write(obj.path)
       ..writeByte(3)
-      ..write(obj.numbers);
+      ..write(obj.numbers)
+      ..writeByte(4)
+      ..write(obj.barriers);
   }
 
   @override

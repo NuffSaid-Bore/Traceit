@@ -11,6 +11,60 @@ enum PuzzlePathMode {
 
 class PuzzleGenerator {
 
+  static Future<Puzzle> generateNewDifficultPuzzleAsync({
+  required int size,
+  required PuzzlePathMode mode,
+  required int totalNumbers,
+
+  
+  int difficulty = 1,
+}) async {
+  return await compute(_generateDifficultPuzzle, {
+    'size': size,
+    'totalNumbers': totalNumbers,
+    'mode': mode.index,
+    'difficulty': difficulty,
+  }); 
+}
+
+  static Puzzle _generateDifficultPuzzle(Map<String, dynamic> args) {
+    final size = args['size'] as int;
+    final totalNumbers = args['totalNumbers'] as int;
+    final mode = PuzzlePathMode.values[args['mode'] as int];
+
+    // Select path algorithm
+    late List<Offset> path;
+
+    switch (mode) {
+      case PuzzlePathMode.heuristicDFS:
+        path = _generateHeuristicDFSPath(size, size);
+        break;
+
+      case PuzzlePathMode.snake:
+        path = generateSnakeHamiltonian(size, size);
+        break;
+
+      case PuzzlePathMode.randomizedSnake:
+        path = generateRandomizedHamiltonian(size, size);
+        break;
+    }
+
+    // Assign numbers
+    Map<int, Offset> numbers =
+        _assignNumbersOnPath(path, totalNumbers);
+      // Generate barriers
+  Map<Offset, List<String>> barriers = _generateBarriers(size, 1);
+
+    return Puzzle(
+      rows: size,
+      cols: size,
+      path: path,
+      numbers: numbers,
+      barriers: barriers,
+    );
+  }
+
+
   /// Generate a puzzle asynchronously using the selected path mode.
   static Future<Puzzle> generatePuzzleAsync({
     int size = 8,
@@ -58,6 +112,31 @@ class PuzzleGenerator {
     );
   }
 
+static Map<Offset, List<String>> _generateBarriers(int size, int difficulty) {
+  final rng = Random();
+  final barrierCount = difficulty * 2;
+
+  final Map<Offset, List<String>> barriers = {};
+
+  for (int i = 0; i < barrierCount; i++) {
+    final x = rng.nextInt(size);
+    final y = rng.nextInt(size);
+    final cell = Offset(x.toDouble(), y.toDouble());
+
+    const directions = ["up", "down", "left", "right"];
+    final shuffled = List<String>.from(directions)..shuffle();
+
+    final dir = shuffled.first;
+
+    // Add barrier without overwriting existing ones
+    barriers.putIfAbsent(cell, () => []);
+    if (!barriers[cell]!.contains(dir)) {
+      barriers[cell]!.add(dir);
+    }
+  }
+
+  return barriers;
+}
 
 
 /// ---------------------------------------------------------
