@@ -129,7 +129,7 @@ class _LandingPageState extends State<LandingPage> {
         automaticallyImplyLeading: false,
         backgroundColor: Colors.white.withOpacity(0.15),
         elevation: 0,
-        leadingWidth: 48,
+        leadingWidth: 50,
         leading: Padding(
           padding: const EdgeInsets.only(left: 8),
           child: GestureDetector(

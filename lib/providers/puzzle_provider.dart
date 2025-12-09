@@ -106,6 +106,7 @@ class PuzzleProvider extends ChangeNotifier {
   }
 
   /// Generate a new difficult puzzle
+  /// // need to be refined
   Future<void> generateNewDifficultPuzzle(
     int size,
     PuzzlePathMode mode,

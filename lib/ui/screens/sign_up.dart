@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:rive/rive.dart';
+import 'package:trace_it/core/constants/app_colors.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -29,8 +30,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
   StateMachineController? stateMachineController;
 
   Future<void> _register() async {
-    if (!_formKey.currentState!.validate()) return;
-    successTrigger?.fire();
+    if (!_formKey.currentState!.validate()) {
+      failTriger?.fire();
+      return;
+    }
+
     setState(() => _isLoading = true);
 
     try {
@@ -38,6 +42,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
       );
+      successTrigger?.fire();
 
       final user = credential.user;
       if (user != null) {
@@ -50,10 +55,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
         Navigator.pushReplacementNamed(context, '/home');
       }
     } on FirebaseAuthException catch (e) {
+      failTriger?.fire();
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(e.message ?? 'Error')));
-      failTriger?.fire();
     } finally {
       setState(() => _isLoading = false);
     }
@@ -132,7 +137,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
             child: Center(
               child: Padding(
                 padding: const EdgeInsets.only(top: 5),
-                child: Rive(artboard: _teddyArtboard!),
+                child: _teddyArtboard == null
+                    ? const SizedBox()
+                    : Rive(artboard: _teddyArtboard!),
               ),
             ),
           ),
@@ -162,25 +169,31 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             labelText: "Username",
                             // NOT FOCUSED
                             enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.all(Radius.circular(10)),
+                              borderRadius: BorderRadius.all(
+                                Radius.circular(10),
+                              ),
                               borderSide: BorderSide(
-                                color: Colors.deepPurple,
+                                color: borderColor,
                                 width: 2,
                               ),
                             ),
 
                             // FOCUSED
                             focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.all(Radius.circular(10)),
+                              borderRadius: BorderRadius.all(
+                                Radius.circular(10),
+                              ),
                               borderSide: BorderSide(
-                                color: Colors.deepPurple,
+                                color: borderColor,
                                 width: 2,
                               ),
                             ),
 
                             // ERROR
                             errorBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.all(Radius.circular(10)),
+                              borderRadius: BorderRadius.all(
+                                Radius.circular(10),
+                              ),
                               borderSide: BorderSide(
                                 color: Colors.red,
                                 width: 2,
@@ -189,7 +202,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                             // FOCUSED + ERROR
                             focusedErrorBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.all(Radius.circular(10)),
+                              borderRadius: BorderRadius.all(
+                                Radius.circular(10),
+                              ),
                               borderSide: BorderSide(
                                 color: Colors.redAccent,
                                 width: 2,
@@ -211,25 +226,31 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             labelText: "Email",
                             // NOT FOCUSED
                             enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.all(Radius.circular(10)),
+                              borderRadius: BorderRadius.all(
+                                Radius.circular(10),
+                              ),
                               borderSide: BorderSide(
-                                color: Colors.deepPurple,
+                                color: borderColor,
                                 width: 2,
                               ),
                             ),
 
                             // FOCUSED
                             focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.all(Radius.circular(10)),
+                              borderRadius: BorderRadius.all(
+                                Radius.circular(10),
+                              ),
                               borderSide: BorderSide(
-                                color: Colors.deepPurple,
+                                color: borderColor,
                                 width: 2,
                               ),
                             ),
 
                             // ERROR
                             errorBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.all(Radius.circular(10)),
+                              borderRadius: BorderRadius.all(
+                                Radius.circular(10),
+                              ),
                               borderSide: BorderSide(
                                 color: Colors.red,
                                 width: 2,
@@ -238,7 +259,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                             // FOCUSED + ERROR
                             focusedErrorBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.all(Radius.circular(10)),
+                              borderRadius: BorderRadius.all(
+                                Radius.circular(10),
+                              ),
                               borderSide: BorderSide(
                                 color: Colors.redAccent,
                                 width: 2,
@@ -261,25 +284,31 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             labelText: "Password",
                             // NOT FOCUSED
                             enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.all(Radius.circular(10)),
+                              borderRadius: BorderRadius.all(
+                                Radius.circular(10),
+                              ),
                               borderSide: BorderSide(
-                                color: Colors.deepPurple,
+                                color: borderColor,
                                 width: 2,
                               ),
                             ),
 
                             // FOCUSED
                             focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.all(Radius.circular(10)),
+                              borderRadius: BorderRadius.all(
+                                Radius.circular(10),
+                              ),
                               borderSide: BorderSide(
-                                color: Colors.deepPurple,
+                                color: borderColor,
                                 width: 2,
                               ),
                             ),
 
                             // ERROR
                             errorBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.all(Radius.circular(10)),
+                              borderRadius: BorderRadius.all(
+                                Radius.circular(10),
+                              ),
                               borderSide: BorderSide(
                                 color: Colors.red,
                                 width: 2,
@@ -288,7 +317,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                             // FOCUSED + ERROR
                             focusedErrorBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.all(Radius.circular(10)),
+                              borderRadius: BorderRadius.all(
+                                Radius.circular(10),
+                              ),
                               borderSide: BorderSide(
                                 color: Colors.redAccent,
                                 width: 2,

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:trace_it/core/constants/app_colors.dart';
 import 'package:trace_it/providers/puzzle_provider.dart';
 import 'package:rive/rive.dart';
 
@@ -30,8 +31,10 @@ class _LoginScreenState extends State<LoginScreen> {
   StateMachineController? stateMachineController;
 
   Future<void> _login() async {
-    if (!_formKey.currentState!.validate()) return;
-    successTrigger?.fire();
+    if (!_formKey.currentState!.validate()) {
+      failTriger?.fire();
+      return;
+    }
 
     setState(() => _isLoading = true);
     final provider = context.read<PuzzleProvider>();
@@ -41,7 +44,7 @@ class _LoginScreenState extends State<LoginScreen> {
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
       );
-
+      successTrigger?.fire();
       // Save login state
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool('isLoggedIn', true);
@@ -50,10 +53,10 @@ class _LoginScreenState extends State<LoginScreen> {
 
       Navigator.pushReplacementNamed(context, '/home');
     } on FirebaseAuthException catch (e) {
+      failTriger?.fire();
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(e.message ?? 'Error')));
-      failTriger?.fire();
     } finally {
       setState(() => _isLoading = false);
     }
@@ -131,7 +134,9 @@ class _LoginScreenState extends State<LoginScreen> {
             child: Center(
               child: Padding(
                 padding: const EdgeInsets.only(top: 5),
-                child: Rive(artboard: _teddyArtboard!),
+                child: _teddyArtboard == null
+                    ? const SizedBox()
+                    : Rive(artboard: _teddyArtboard!),
               ),
             ),
           ),
@@ -165,7 +170,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 Radius.circular(10),
                               ),
                               borderSide: BorderSide(
-                                color: Colors.deepPurple,
+                                color: borderColor,
                                 width: 2,
                               ),
                             ),
@@ -176,7 +181,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 Radius.circular(10),
                               ),
                               borderSide: BorderSide(
-                                color: Colors.deepPurple,
+                                color: borderColor,
                                 width: 2,
                               ),
                             ),
@@ -235,7 +240,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 Radius.circular(10),
                               ),
                               borderSide: BorderSide(
-                                color: Colors.deepPurple,
+                                color: borderColor,
                                 width: 2,
                               ),
                             ),
@@ -246,7 +251,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 Radius.circular(10),
                               ),
                               borderSide: BorderSide(
-                                color: Colors.deepPurple,
+                                color: borderColor,
                                 width: 2,
                               ),
                             ),

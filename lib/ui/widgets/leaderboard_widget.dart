@@ -18,7 +18,7 @@ class LeaderboardWidget extends StatelessWidget {
     if (i == 0) return const Color(0xFFFFD700); // Gold
     if (i == 1) return const Color(0xFFC0C0C0); // Silver
     if (i == 2) return const Color(0xFFCD7F32); // Bronze
-    return Colors.white.withOpacity(0.3);
+    return Colors.white;
   }
 
   @override

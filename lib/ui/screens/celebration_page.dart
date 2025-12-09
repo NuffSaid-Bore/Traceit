@@ -125,7 +125,8 @@ class _CelebrationPageState extends State<CelebrationPage> {
     }
 
     puzzleProvider.attempts = 0;
-    await puzzleProvider.generateNewDifficultPuzzle(
+    // replace with new difficult puzzle
+    await puzzleProvider.generateNewPuzzle(
       8,
       PuzzlePathMode.heuristicDFS,
       15,
