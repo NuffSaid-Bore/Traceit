@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:lottie/lottie.dart';
 import 'package:provider/provider.dart';
 import 'package:confetti/confetti.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -68,7 +69,7 @@ class _CelebrationPageState extends State<CelebrationPage> {
       final attempts = puzzleProvider.attempts;
       final elapsedSeconds = puzzleProvider.elapsed.inSeconds;
 
-      await FirestoreService.saveGameResult(user.uid, attempts, elapsedSeconds)  ;
+      await FirestoreService.saveGameResult(user.uid, attempts, elapsedSeconds);
 
       await FirestoreService.updateDailyStreak(user.uid);
 
@@ -218,19 +219,21 @@ class _CelebrationPageState extends State<CelebrationPage> {
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(16),
               ),
-              width: 300,
-              height: 300,
+              width: 350,
+              height: 350,
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(
-                    Icons.emoji_events,
-                    color: Colors.orange,
-                    size: 60,
+                  Lottie.asset(
+                    'assets/animations/trophy_animation.json',
+                    width: 200,
+                    height: 200,
+                    repeat: false,
+                    fit: BoxFit.cover,
                   ),
                   const SizedBox(height: 16),
                   const Text(
-                    "Puzzle Solved!",
+                    "🎉 Congratulations! 🎉",
                     style: TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.bold,

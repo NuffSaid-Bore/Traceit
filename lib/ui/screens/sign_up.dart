@@ -1,6 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:rive/rive.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -18,9 +20,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _isLoading = false;
   bool _showPassword = false;
 
+  late String animationUrl;
+  Artboard? _teddyArtboard;
+  SMITrigger? successTrigger, failTriger;
+  SMIBool? isHandsUp, isChecking;
+  SMINumber? numLook;
+
+  StateMachineController? stateMachineController;
+
   Future<void> _register() async {
     if (!_formKey.currentState!.validate()) return;
-
+    successTrigger?.fire();
     setState(() => _isLoading = true);
 
     try {
@@ -43,9 +53,49 @@ class _RegisterScreenState extends State<RegisterScreen> {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(e.message ?? 'Error')));
+      failTriger?.fire();
     } finally {
       setState(() => _isLoading = false);
     }
+  }
+
+  @override
+  void initState() {
+    animationUrl = 'assets/animation/animated_login.riv';
+    rootBundle.load(animationUrl).then((data) {
+      final file = RiveFile.import(data);
+      final artboard = file.mainArtboard;
+      stateMachineController = StateMachineController.fromArtboard(
+        artboard,
+        'Login Machine',
+      );
+
+      if (stateMachineController != null) {
+        artboard.addController(stateMachineController!);
+
+        stateMachineController!.inputs.forEach((e) {
+          debugPrint(e.runtimeType.toString());
+          debugPrint("name${e.name}End");
+        });
+
+        stateMachineController!.inputs.forEach((element) {
+          if (element.name == "trigSuccess") {
+            successTrigger = element as SMITrigger;
+          } else if (element.name == "trigFail") {
+            failTriger = element as SMITrigger;
+          } else if (element.name == "isHandsUp") {
+            isHandsUp = element as SMIBool;
+          } else if (element.name == "isChecking") {
+            isChecking = element as SMIBool;
+          } else if (element.name == "numLook") {
+            numLook = element as SMINumber;
+          }
+        });
+      }
+      setState(() => _teddyArtboard = artboard);
+    });
+
+    super.initState();
   }
 
   @override
@@ -56,9 +106,24 @@ class _RegisterScreenState extends State<RegisterScreen> {
     super.dispose();
   }
 
+  void handsOnEyes() {
+    isHandsUp?.change(true);
+  }
+
+  void moveEyesBalls(val) {
+    numLook?.change(val.length.toDouble());
+  }
+
+  void lookOnTheField() {
+    isHandsUp?.change(false);
+    isChecking?.change(true);
+    numLook?.change(0);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0XFFD6E2EA),
       resizeToAvoidBottomInset: false,
       body: Column(
         children: [
@@ -66,11 +131,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
             flex: 3,
             child: Center(
               child: Padding(
-                padding: const EdgeInsets.only(top: 60.0, bottom: 10.0),
-                child: Text(
-                  "Register Account",
-                  style: Theme.of(context).textTheme.headlineMedium,
-                ),
+                padding: const EdgeInsets.only(top: 5),
+                child: Rive(artboard: _teddyArtboard!),
               ),
             ),
           ),
@@ -94,50 +156,150 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       Padding(
                         padding: const EdgeInsets.all(10.0),
                         child: TextFormField(
-                          style: const TextStyle(
-                            color: Colors.black, 
-                          ),
+                          style: const TextStyle(color: Colors.black),
                           controller: _usernameController,
                           decoration: const InputDecoration(
                             labelText: "Username",
-                            border: OutlineInputBorder(),
+                            // NOT FOCUSED
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.all(Radius.circular(10)),
+                              borderSide: BorderSide(
+                                color: Colors.deepPurple,
+                                width: 2,
+                              ),
+                            ),
+
+                            // FOCUSED
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.all(Radius.circular(10)),
+                              borderSide: BorderSide(
+                                color: Colors.deepPurple,
+                                width: 2,
+                              ),
+                            ),
+
+                            // ERROR
+                            errorBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.all(Radius.circular(10)),
+                              borderSide: BorderSide(
+                                color: Colors.red,
+                                width: 2,
+                              ),
+                            ),
+
+                            // FOCUSED + ERROR
+                            focusedErrorBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.all(Radius.circular(10)),
+                              borderSide: BorderSide(
+                                color: Colors.redAccent,
+                                width: 2,
+                              ),
+                            ),
                           ),
                           validator: (value) =>
                               value!.isEmpty ? "Enter username" : null,
+                          onTap: lookOnTheField,
+                          onChanged: moveEyesBalls,
                         ),
                       ),
                       Padding(
                         padding: const EdgeInsets.all(10.0),
                         child: TextFormField(
-                          style: const TextStyle(
-                            color: Colors.black, 
-                          ),
+                          style: const TextStyle(color: Colors.black),
                           controller: _emailController,
                           decoration: const InputDecoration(
                             labelText: "Email",
-                            border: OutlineInputBorder(),
+                            // NOT FOCUSED
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.all(Radius.circular(10)),
+                              borderSide: BorderSide(
+                                color: Colors.deepPurple,
+                                width: 2,
+                              ),
+                            ),
+
+                            // FOCUSED
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.all(Radius.circular(10)),
+                              borderSide: BorderSide(
+                                color: Colors.deepPurple,
+                                width: 2,
+                              ),
+                            ),
+
+                            // ERROR
+                            errorBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.all(Radius.circular(10)),
+                              borderSide: BorderSide(
+                                color: Colors.red,
+                                width: 2,
+                              ),
+                            ),
+
+                            // FOCUSED + ERROR
+                            focusedErrorBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.all(Radius.circular(10)),
+                              borderSide: BorderSide(
+                                color: Colors.redAccent,
+                                width: 2,
+                              ),
+                            ),
                           ),
                           validator: (value) =>
                               value!.isEmpty ? "Enter email" : null,
+                          onTap: lookOnTheField,
+                          onChanged: moveEyesBalls,
                         ),
                       ),
                       Padding(
                         padding: const EdgeInsets.all(10.0),
                         child: TextFormField(
-                          style: const TextStyle(
-                            color: Colors.black, 
-                          ),
+                          style: const TextStyle(color: Colors.black),
                           controller: _passwordController,
                           obscureText: !_showPassword,
                           decoration: InputDecoration(
                             labelText: "Password",
-                            border: const OutlineInputBorder(),
+                            // NOT FOCUSED
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.all(Radius.circular(10)),
+                              borderSide: BorderSide(
+                                color: Colors.deepPurple,
+                                width: 2,
+                              ),
+                            ),
+
+                            // FOCUSED
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.all(Radius.circular(10)),
+                              borderSide: BorderSide(
+                                color: Colors.deepPurple,
+                                width: 2,
+                              ),
+                            ),
+
+                            // ERROR
+                            errorBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.all(Radius.circular(10)),
+                              borderSide: BorderSide(
+                                color: Colors.red,
+                                width: 2,
+                              ),
+                            ),
+
+                            // FOCUSED + ERROR
+                            focusedErrorBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.all(Radius.circular(10)),
+                              borderSide: BorderSide(
+                                color: Colors.redAccent,
+                                width: 2,
+                              ),
+                            ),
                             suffixIcon: IconButton(
                               icon: Icon(
                                 _showPassword
                                     ? Icons.visibility
                                     : Icons.visibility_off,
-                                color: Colors.black54,
+                                color: Colors.black,
                               ),
                               onPressed: () => setState(
                                 () => _showPassword = !_showPassword,
@@ -146,6 +308,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           ),
                           validator: (value) =>
                               value!.length < 6 ? "Password too short" : null,
+                          onTap: handsOnEyes,
                         ),
                       ),
 

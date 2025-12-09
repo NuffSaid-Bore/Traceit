@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:liquid_pull_refresh/liquid_pull_refresh.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:trace_it/core/services/firestore_service.dart';
 import 'package:trace_it/core/utils/puzzle_generator.dart';
 import 'package:trace_it/providers/game_state_provider.dart';
 import 'package:trace_it/providers/leaderboard_provider.dart';
@@ -67,26 +66,24 @@ class _LandingPageState extends State<LandingPage> {
   }
 
   Future<void> _logout(BuildContext context) async {
-  try {
-    // 1. Clear any in-memory game state and local Hive storage
-    await context.read<GameStateProvider>().clearAllState();
+    try {
+      // 1. Clear any in-memory game state and local Hive storage
+      await context.read<GameStateProvider>().clearAllState();
 
-    // 2. Update SharedPreferences
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool("isLoggedIn", false);
+      // 2. Update SharedPreferences
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool("isLoggedIn", false);
 
-    // 3. Sign out from Firebase
-    await FirebaseAuth.instance.signOut();
+      // 3. Sign out from Firebase
+      await FirebaseAuth.instance.signOut();
 
-    // 4. Navigate to login screen
-    Navigator.pushReplacementNamed(context, "/login");
-
-  } catch (e, st) {
-    print("Logout error: $e");
-    print(st);
+      // 4. Navigate to login screen
+      Navigator.pushReplacementNamed(context, "/login");
+    } catch (e, st) {
+      print("Logout error: $e");
+      print(st);
+    }
   }
-}
-
 
   Future<void> _updateProfile() async {
     if (!_formKey.currentState!.validate()) return;
@@ -132,6 +129,34 @@ class _LandingPageState extends State<LandingPage> {
         automaticallyImplyLeading: false,
         backgroundColor: Colors.white.withOpacity(0.15),
         elevation: 0,
+        leadingWidth: 48,
+        leading: Padding(
+          padding: const EdgeInsets.only(left: 8),
+          child: GestureDetector(
+            onTap: () => _logout(context),
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.2),
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white.withOpacity(0.3)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.2),
+                    blurRadius: 6,
+                    offset: Offset(0, 3),
+                  ),
+                ],
+              ),
+              padding: const EdgeInsets.all(10),
+              child: Icon(
+                Icons.logout,
+                size: 22,
+                color: Colors.deepPurpleAccent.shade100,
+              ),
+            ),
+          ),
+        ),
+
         title: const Text(
           "Trace...It",
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
@@ -172,29 +197,6 @@ class _LandingPageState extends State<LandingPage> {
                   ),
                 ),
                 const SizedBox(width: 12),
-                GestureDetector(
-                  onTap: () => _logout(context),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white.withOpacity(0.3)),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.2),
-                          blurRadius: 6,
-                          offset: const Offset(0, 3),
-                        ),
-                      ],
-                    ),
-                    padding: const EdgeInsets.all(10),
-                    child: Icon(
-                      Icons.logout,
-                      color: Colors.deepPurpleAccent.shade100,
-                      size: 22,
-                    ),
-                  ),
-                ),
               ],
             ),
           ),
